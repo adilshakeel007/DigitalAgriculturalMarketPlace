@@ -1,0 +1,68 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    border-radius: 12px;
+}
+
+.btn {
+    border-radius: 8px;
+}
+
+.table {
+    background-color: white;
+}
+
+.page-title {
+    font-weight: 600;
+}
+
+.dashboard-card {
+    min-height: 120px;
+}
+
+.product-card img {
+    height: 220px;
+    object-fit: cover;
+}
+
+@media (max-width: 768px) {
+    .product-card img {
+        height: 180px;
+    }
+
+    .dashboard-card {
+        min-height: auto;
+    }
+
+    h2 {
+        font-size: 1.6rem;
+    }
+
+    .table {
+        font-size: 0.9rem;
+    }
+}

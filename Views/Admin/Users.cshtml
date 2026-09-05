@@ -1,0 +1,151 @@
+﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.User>
+
+@{
+    ViewData["Title"] = "Manage Users";
+}
+
+<div class="container mt-4">
+
+    <h2>
+        Manage Users
+    </h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <div class="table-responsive">
+
+        <table class="table table-bordered table-hover">
+
+            <thead>
+
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Registered</th>
+                    <th>Action</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @foreach (var user in Model)
+                {
+                    <tr>
+
+                        <td>
+                            @user.Id
+                        </td>
+
+                        <td>
+                            @user.Name
+                        </td>
+
+                        <td>
+                            @user.Email
+                        </td>
+
+                        <td>
+                            @user.Phone
+                        </td>
+
+                        <td>
+                            @user.UserType
+                        </td>
+
+                        <td>
+
+                            @if (user.IsActive)
+                            {
+                                <span class="badge bg-success">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">
+                                    Inactive
+                                </span>
+                            }
+
+                    </td>
+
+                    <td>
+                        @(user.CreatedAt
+                                                .ToString("dd MMM yyyy"))
+                    </td>
+
+                        <td>
+
+                        @if (user.IsActive)
+                            {
+                                <form asp-controller="Admin"
+                                      asp-action="ToggleUserStatus"
+                                      method="post">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@user.Id" />
+
+                                    <button type="submit"
+                                            class="btn btn-sm btn-danger">
+
+                                        Deactivate
+
+                                    </button>
+
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-controller="Admin"
+                                      asp-action="ToggleUserStatus"
+                                      method="post">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@user.Id" />
+
+                                    <button type="submit"
+                                            class="btn btn-sm btn-success">
+
+                                        Activate
+
+                                    </button>
+
+                                </form>
+                            }
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <a asp-controller="Admin"
+       asp-action="Dashboard"
+       class="btn btn-secondary">
+
+        Back to Dashboard
+
+    </a>
+
+</div>

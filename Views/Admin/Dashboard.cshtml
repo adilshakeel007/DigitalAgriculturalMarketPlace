@@ -1,0 +1,263 @@
+﻿@model DigitalAgriculturalMarketplace.ViewModels.AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="container mt-4">
+
+    <div class="mb-4">
+
+        <h2>
+            Admin Dashboard
+        </h2>
+
+        <p class="text-muted">
+            Platform overview and management.
+        </p>
+
+    </div>
+
+
+    <div class="row">
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Total Users</h6>
+                    <h3>@Model.TotalUsers</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Farmers</h6>
+                    <h3>@Model.TotalFarmers</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Consumers</h6>
+                    <h3>@Model.TotalConsumers</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Active Users</h6>
+                    <h3>@Model.ActiveUsers</h3>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="row">
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Total Products</h6>
+                    <h3>@Model.TotalProducts</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Active Products</h6>
+                    <h3>@Model.ActiveProducts</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Total Orders</h6>
+                    <h3>@Model.TotalOrders</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Pending Orders</h6>
+                    <h3>@Model.PendingOrders</h3>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="row">
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Completed Orders</h6>
+                    <h3>@Model.CompletedOrders</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Total Revenue</h6>
+                    <h3>
+                        Rs. @Model.TotalRevenue.ToString("N2")
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Reviews</h6>
+                    <h3>@Model.TotalReviews</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3 mb-3">
+            <div class="card shadow-sm dashboard-card">
+                <div class="card-body">
+                    <h6>Messages</h6>
+                    <h3>@Model.TotalMessages</h3>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <hr class="my-4" />
+
+
+    <h4>
+        Management
+    </h4>
+
+    <div class="mb-4">
+
+        <a asp-controller="Admin"
+           asp-action="Users"
+           class="btn btn-primary me-2">
+
+            Manage Users
+
+        </a>
+
+        <a asp-controller="Admin"
+           asp-action="Products"
+           class="btn btn-success me-2">
+
+            Manage Products
+
+        </a>
+
+        <a asp-controller="Admin"
+           asp-action="Orders"
+           class="btn btn-warning">
+
+            View Orders
+
+        </a>
+        <a asp-controller="Admin"
+           asp-action="Reports"
+           class="btn btn-info">
+
+            Reports
+
+        </a>
+
+    </div>
+
+
+    <hr />
+
+
+    <h4>
+        Recent Orders
+    </h4>
+
+    @if (!Model.RecentOrders.Any())
+    {
+        <div class="alert alert-info">
+            No orders available.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+
+            <table class="table table-bordered">
+
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Product</th>
+                        <th>Consumer</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @foreach (
+                                    var order in Model.RecentOrders)
+                    {
+                        <tr>
+
+                            <td>
+                                @order.Id
+                            </td>
+
+                            <td>
+                                @order.Product?.Name
+                            </td>
+
+                            <td>
+                                @order.Consumer?.Name
+                            </td>
+
+                            <td>
+                                Rs.
+                                @order.TotalPrice.ToString("N2")
+                            </td>
+
+                            <td>
+                                @order.Status
+                            </td>
+
+                            <td>
+                                @(order.OrderDate
+                                                        .ToString("dd MMM yyyy"))
+                    </td>
+
+                        </tr>
+                                }
+
+                </tbody>
+
+            </table>
+
+        </div>
+    }
+
+</div>

@@ -1,0 +1,312 @@
+﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Product>
+
+@{
+    ViewData["Title"] = "Marketplace";
+}
+
+<div class="container mt-4">
+
+    <div class="col-12 col-md-4">
+
+        <h2>Marketplace</h2>
+
+        <p class="text-muted">
+            Browse fresh agricultural products
+            available from registered farmers.
+        </p>
+        <form asp-controller="Marketplace"
+              asp-action="Index"
+              method="get"
+              class="mb-4">
+
+            <div class="row g-3">
+
+                @if (ViewBag.PriceError != null)
+                {
+                    <div class="alert alert-danger">
+
+                        @ViewBag.PriceError
+
+                    </div>
+                }
+                <!-- Search -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label">
+                        Search Product
+                    </label>
+
+                    <input type="text"
+                           name="searchTerm"
+                           value="@ViewBag.SearchTerm"
+                           class="form-control"
+                           placeholder="e.g. Tomato, Mango, Wheat" />
+
+                </div>
+
+
+                <!-- Category -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label">
+                        Category
+                    </label>
+
+                    <select name="category"
+                            class="form-select">
+
+                        <option value=""
+                                selected="@(string.IsNullOrEmpty(ViewBag.Category))">
+                            All Categories
+                        </option>
+
+                        <option value="Vegetables"
+                                selected="@(ViewBag.Category == "Vegetables")">
+                            Vegetables
+                        </option>
+
+                        <option value="Fruits"
+                                selected="@(ViewBag.Category == "Fruits")">
+                            Fruits
+                        </option>
+
+                        <option value="Grains"
+                                selected="@(ViewBag.Category == "Grains")">
+                            Grains
+                        </option>
+
+                        <option value="Dairy"
+                                selected="@(ViewBag.Category == "Dairy")">
+                            Dairy
+                        </option>
+
+                        <option value="Other"
+                                selected="@(ViewBag.Category == "Other")">
+                            Other
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Sort -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label">
+                        Sort By
+                    </label>
+
+                    <select name="sortBy"
+                            class="form-select">
+
+                        <option value=""
+                                selected="@(string.IsNullOrEmpty(ViewBag.SortBy))">
+                            Newest First
+                        </option>
+
+                        <option value="price_low"
+                                selected="@(ViewBag.SortBy == "price_low")">
+                            Price: Low to High
+                        </option>
+
+                        <option value="price_high"
+                                selected="@(ViewBag.SortBy == "price_high")">
+                            Price: High to Low
+                        </option>
+
+                        <option value="oldest"
+                                selected="@(ViewBag.SortBy == "oldest")">
+                            Oldest First
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Minimum Price -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label">
+                        Minimum Price
+                    </label>
+
+                    <input type="number"
+                           name="minPrice"
+                           value="@ViewBag.MinPrice"
+                           class="form-control"
+                           min="0"
+                           step="0.01"
+                           placeholder="Min price" />
+
+                </div>
+
+
+                <!-- Maximum Price -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label">
+                        Maximum Price
+                    </label>
+
+                    <input type="number"
+                           name="maxPrice"
+                           value="@ViewBag.MaxPrice"
+                           class="form-control"
+                           min="0"
+                           step="0.01"
+                           placeholder="Max price" />
+
+                </div>
+
+
+                <!-- Buttons -->
+                <div class="col-12 col-md-6 d-flex align-items-end">
+                    <div class="d-flex flex-wrap gap-2 w-100">
+
+                        <button type="submit"
+                                class="btn btn-primary">
+                            Search / Filter
+                        </button>
+
+                        <a asp-controller="Marketplace"
+                           asp-action="Index"
+                           class="btn btn-secondary">
+                            Clear Filters
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </form>
+        <p>
+            @Model.Count() products currently available.
+        </p>
+
+    </div>
+    <div class="mb-3">
+        <strong>
+            @Model.Count() product(s) found
+        </strong>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="alert alert-warning">
+
+            No products matched your search or filters.
+
+            <br />
+
+            <a asp-controller="Marketplace"
+               asp-action="Index">
+
+                Clear filters and show all products
+
+            </a>
+
+        </div>
+    }
+    else
+    {
+        <div class="row">
+
+            @foreach (var product in Model)
+            {
+                <div class="col-12 col-sm-6 col-lg-4 mb-4">
+
+                    <div class="card h-100 shadow-sm product-card">
+
+                        @if (!string.IsNullOrEmpty(
+                                        product.ImageUrl))
+                        {
+                            <img src="@product.ImageUrl"
+                                 class="card-img-top"
+                                 alt="@product.Name"
+                                 style="
+                                                 height:220px;
+                                                 object-fit:cover;
+                                             " />
+                        }
+                        else
+                        {
+                            <div class="d-flex
+                                                    align-items-center
+                                                    justify-content-center
+                                                    bg-light"
+                                 style="height:220px;">
+
+                                <span class="text-muted">
+                                    No Image
+                                </span>
+
+                            </div>
+                        }
+
+                        <div class="card-body">
+
+                            <h5 class="card-title">
+                                @product.Name
+                            </h5>
+
+                            <p class="mb-1">
+
+                                <strong>
+                                    Category:
+                                </strong>
+
+                                @product.Category
+
+                            </p>
+
+                            <p class="mb-1">
+
+                                <strong>Price:</strong>
+                                Rs. @product.PricePerUnit
+
+                            </p>
+
+                            <p class="mb-1">
+
+                                <strong>
+                                    Available:
+                                </strong>
+
+                                @product.Quantity
+
+
+                            </p>
+
+                            <p class="mb-3">
+
+                                <strong>
+                                    Farmer:
+                                </strong>
+
+                                @product.Farmer?.Name
+
+                            </p>
+
+                            <a asp-controller="Marketplace"
+                               asp-action="Details"
+                               asp-route-id="@product.Id"
+                               class="btn btn-primary w-100">
+
+                                View Details
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    }
+
+</div>

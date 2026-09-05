@@ -1,0 +1,29 @@
+﻿using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
+
+namespace DigitalAgriculturalMarketplace.ViewModels
+{
+    public class ProductCreateViewModel
+    {
+        [Required(ErrorMessage = "Product name is required.")]
+        [StringLength(150)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Category is required.")]
+        public string Category { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Price is required.")]
+        [Range(0.01, 1000000)]
+        public decimal PricePerUnit { get; set; }
+
+        [Required(ErrorMessage = "Quantity is required.")]
+        [Range(0, 1000000)]
+        public int Quantity { get; set; }
+
+        [StringLength(1000)]
+        public string? Description { get; set; }
+
+        [Required(ErrorMessage = "Please select a product image.")]
+        public IFormFile? ImageFile { get; set; }
+    }
+}

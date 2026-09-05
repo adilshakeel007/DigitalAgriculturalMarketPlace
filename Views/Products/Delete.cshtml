@@ -1,0 +1,91 @@
+﻿@model DigitalAgriculturalMarketplace.Models.Product
+
+@{
+    ViewData["Title"] = "Delete Product";
+}
+
+<div class="container mt-4">
+
+    <div class="row justify-content-center">
+
+        <div class="col-12 col-md-7 col-lg-6">
+
+            <div class="card border-danger">
+
+                <div class="card-body">
+
+                    <h2 class="text-danger">
+                        Delete Product
+                    </h2>
+
+                    <p>
+                        Are you sure you want to delete this product?
+                    </p>
+
+                    <hr />
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <div class="text-center mb-3">
+
+                            <img src="@Model.ImageUrl"
+                                 alt="@Model.Name"
+                                 width="180"
+                                 height="180"
+                                 style="object-fit: cover;" />
+
+                        </div>
+                    }
+
+                    <p>
+                        <strong>Name:</strong>
+                        @Model.Name
+                    </p>
+
+                    <p>
+                        <strong>Category:</strong>
+                        @Model.Category
+                    </p>
+
+                    <p>
+                        <strong>Price:</strong>
+                        Rs. @Model.PricePerUnit
+                    </p>
+
+
+                    <form asp-action="DeleteConfirmed"
+                          method="post">
+
+                        <input type="hidden"
+                               name="id"
+                               value="@Model.Id" />
+
+
+                        <div class="d-flex flex-wrap gap-2">
+
+                            <button type="submit"
+                                    class="btn btn-danger">
+
+                                Yes, Delete
+
+                            </button>
+
+                            <a asp-action="Index"
+                               class="btn btn-secondary">
+
+                                Cancel
+
+                            </a>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

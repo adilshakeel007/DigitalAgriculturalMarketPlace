@@ -1,0 +1,81 @@
+﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Order>
+
+@{
+    ViewData["Title"] = "All Orders";
+}
+
+<div class="container mt-4">
+
+    <h2>
+        All Orders
+    </h2>
+
+    <div class="table-responsive">
+
+        <table class="table table-bordered">
+
+            <thead>
+
+                <tr>
+                    <th>ID</th>
+                    <th>Product</th>
+                    <th>Farmer</th>
+                    <th>Consumer</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @foreach (var order in Model)
+                {
+                    <tr>
+
+                        <td>
+                            @order.Id
+                        </td>
+
+                        <td>
+                            @order.Product?.Name
+                        </td>
+
+                        <td>
+                            @order.Product?.Farmer?.Name
+                        </td>
+
+                        <td>
+                            @order.Consumer?.Name
+                        </td>
+
+                        <td>
+                            @order.Quantity
+                        </td>
+
+                        <td>
+                            Rs.
+                            @order.TotalPrice.ToString("N2")
+                        </td>
+
+                        <td>
+                            @order.Status
+                        </td>
+
+                        <td>
+                            @(order.OrderDate
+                                                    .ToString("dd MMM yyyy"))
+                    </td>
+
+                    </tr>
+                                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>

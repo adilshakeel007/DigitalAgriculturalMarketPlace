@@ -1,0 +1,195 @@
+﻿@model DigitalAgriculturalMarketplace.ViewModels.ProductCreateViewModel
+@{
+    ViewData["Title"] = "Add Product";
+}
+
+<div class="container mt-4">
+
+    <div class="row justify-content-center">
+
+        <div class="col-12 col-md-8 col-lg-7">
+
+            <div class="card shadow">
+
+                <div class="card-body">
+
+                    <h2 class="mb-4">
+                        Add Product
+                    </h2>
+
+                    <form asp-action="Create"
+                          method="post"
+                          enctype="multipart/form-data">
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger">
+                        </div>
+
+
+                        <div class="mb-3">
+
+                            <label asp-for="Name"
+                                   class="form-label">
+                                Product Name
+                            </label>
+
+                            <input asp-for="Name"
+                                   class="form-control" />
+
+                            <span asp-validation-for="Name"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+
+                        <div class="mb-3">
+
+                            <label asp-for="Category"
+                                   class="form-label">
+                                Category
+                            </label>
+
+                            <select asp-for="Category"
+                                    class="form-select">
+
+                                <option value="">
+                                    -- Select Category --
+                                </option>
+
+                                <option value="Vegetables">
+                                    Vegetables
+                                </option>
+
+                                <option value="Fruits">
+                                    Fruits
+                                </option>
+
+                                <option value="Grains">
+                                    Grains
+                                </option>
+
+                                <option value="Dairy">
+                                    Dairy
+                                </option>
+
+                                <option value="Other">
+                                    Other
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="Category"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+
+                        <div class="mb-3">
+
+                            <label asp-for="PricePerUnit"
+                                   class="form-label">
+                                Price Per Unit
+                            </label>
+
+                            <input asp-for="PricePerUnit"
+                                   class="form-control" />
+
+                            <span asp-validation-for="PricePerUnit"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+
+                        <div class="mb-3">
+
+                            <label asp-for="Quantity"
+                                   class="form-label">
+                                Available Quantity
+                            </label>
+
+                            <input asp-for="Quantity"
+                                   class="form-control" />
+
+                            <span asp-validation-for="Quantity"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+
+
+                        <div class="mb-3">
+
+                            <label asp-for="Description"
+                                   class="form-label">
+                                Description
+                            </label>
+
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="4">
+                            </textarea>
+
+                            <span asp-validation-for="Description"
+                                  class="text-danger">
+                            </span>
+
+                        </div>
+                        <div class="mb-3">
+
+                            <label asp-for="ImageFile"
+                                   class="form-label">
+                                Product Image
+                            </label>
+
+                            <input asp-for="ImageFile"
+                                   type="file"
+                                   class="form-control"
+                                   accept=".jpg,.jpeg,.png" />
+
+                            <span asp-validation-for="ImageFile"
+                                  class="text-danger">
+                            </span>
+
+                            <small class="text-muted">
+                                JPG, JPEG or PNG only. Maximum 5 MB.
+                            </small>
+
+                        </div>
+
+
+                        <button type="submit"
+                                class="btn btn-success">
+
+                            Save Product
+
+                        </button>
+
+
+                        <a asp-action="Index"
+                           class="btn btn-secondary">
+
+                            Back
+
+                        </a>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts
+{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

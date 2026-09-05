@@ -1,0 +1,113 @@
+﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Notification>
+
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="container mt-4">
+
+    <h2>Notifications</h2>
+    @if (Model.Any(n => !n.IsRead))
+    {
+        <form asp-controller="Notifications"
+              asp-action="MarkAllAsRead"
+              method="post"
+              class="mb-3">
+
+            @Html.AntiForgeryToken()
+
+            <button type="submit"
+                    class="btn btn-outline-primary">
+
+                Mark All as Read
+
+            </button>
+
+        </form>
+    }
+
+    <p>
+        Logged-in UserId:
+        @Context.Session.GetInt32("UserId")
+    </p>
+
+    <p>
+        Total notifications:
+        @Model.Count()
+    </p>
+
+    <hr />
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-warning">
+            No notifications found for this user.
+        </div>
+    }
+    else
+    {
+        @foreach (var notification in Model)
+        {
+            <div class="card mb-3 shadow-sm">
+
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between">
+
+                        <h5>
+                            @notification.Title
+                        </h5>
+
+                        @if (!notification.IsRead)
+                        {
+                            <span class="badge bg-primary">
+                                New
+                            </span>
+                        }
+
+                </div>
+
+                <p>
+                    @notification.Message
+                </p>
+
+                <small class="text-muted">
+                    @(notification.CreatedAt
+                                    .ToString("dd MMM yyyy hh:mm tt"))
+            </small>
+
+
+            @if (!notification.IsRead)
+                    {
+                        <div class="card mb-3 shadow-sm">
+
+                            <form asp-controller="Notifications"
+                                  asp-action="MarkAsRead"
+                                  method="post">
+
+                                @Html.AntiForgeryToken()
+
+                                <input type="hidden"
+                                       name="id"
+                                       value="@notification.Id" />
+
+                                <button type="submit"
+                                        class="btn btn-sm btn-outline-primary">
+
+                                    Mark as Read
+
+                                </button>
+
+                            </form>
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+        }
+        }
+    }
+
+</div>

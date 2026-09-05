@@ -1,0 +1,71 @@
+﻿@model DigitalAgriculturalMarketplace.Models.Order
+
+@{
+    ViewData["Title"] = "Order Successful";
+}
+
+<div class="container mt-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <h2 class="text-success">
+                Order Placed Successfully
+            </h2>
+
+            <hr />
+
+            <p>
+                <strong>Order ID:</strong>
+                @Model.Id
+            </p>
+
+            <p>
+                <strong>Product:</strong>
+                @Model.Product?.Name
+            </p>
+
+            <p>
+                <strong>Quantity:</strong>
+                @Model.Quantity
+            </p>
+
+            <p>
+                <strong>Total Price:</strong>
+                Rs. @Model.TotalPrice.ToString("N2")
+            </p>
+
+            <p>
+                <strong>Status:</strong>
+
+                <span class="badge bg-warning text-dark">
+                    @Model.Status
+                </span>
+            </p>
+
+            <p>
+                <strong>Order Date:</strong>
+                @(Model.OrderDate.ToString("dd MMM yyyy hh:mm tt"))
+            </p>
+
+            <a asp-controller="Marketplace"
+               asp-action="Index"
+               class="btn btn-primary">
+
+                Continue Shopping
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>

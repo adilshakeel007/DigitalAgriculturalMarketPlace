@@ -1,0 +1,114 @@
+﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Message>
+
+@{
+    ViewData["Title"] = "Inbox";
+}
+
+<div class="container mt-4">
+
+    <h2>Inbox</h2>
+
+    <p class="text-muted">
+        Messages received from other users.
+    </p>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            Your inbox is empty.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-hover">
+
+                <thead>
+                    <tr>
+                        <th>From</th>
+                        <th>Product</th>
+                        <th>Message</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @foreach (var message in Model)
+                    {
+                        <tr>
+
+                            <td>
+                                @message.Sender?.Name
+                            </td>
+
+                            <td>
+                                @(message.Product?.Name ?? "-")
+                            </td>
+
+                            <td>
+                                @if (message.Content.Length > 50)
+                                {
+                                    @(message.Content.Substring(0, 50) + "...")
+                                }
+                                else
+                                {
+                                    @message.Content
+                                }
+                        </td>
+
+                        <td>
+                            @(message.SentAt
+                                                    .ToString("dd MMM yyyy"))
+                    </td>
+
+                            <td>
+                        @if (message.IsRead)
+                                {
+                                    <span class="badge bg-secondary">
+                                        Read
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">
+                                        New
+                                    </span>
+                                }
+                            </td>
+
+                            <td>
+
+                                <a asp-controller="Messages"
+                                   asp-action="Conversation"
+                                   asp-route-userId="@message.SenderId"
+                                   asp-route-productId="@message.ProductId"
+                                   class="btn btn-sm btn-primary">
+
+                                    Open
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+    }
+
+</div>

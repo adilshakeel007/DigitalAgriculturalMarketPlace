@@ -1,0 +1,128 @@
+﻿@model DigitalAgriculturalMarketplace.Models.Product
+
+@{
+    ViewData["Title"] = "Product Details";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow">
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <div class="text-center mb-4">
+
+                <img src="@Model.ImageUrl"
+                     alt="@Model.Name"
+                     class="img-fluid rounded"
+                     style="max-height: 350px;" />
+
+            </div>
+        }
+
+        <div class="card-body">
+
+            <h2 class="mb-4">
+                Product Details
+            </h2>
+
+            <dl class="row">
+
+                <dt class="col-sm-3">
+                    Product Name
+                </dt>
+
+                <dd class="col-sm-9">
+                    @Model.Name
+                </dd>
+
+
+                <dt class="col-sm-3">
+                    Category
+                </dt>
+
+                <dd class="col-sm-9">
+                    @Model.Category
+                </dd>
+
+
+                <dt class="col-sm-3">
+                    Price Per Unit
+                </dt>
+
+                <dd class="col-sm-9">
+                    Rs. @Model.PricePerUnit
+                </dd>
+
+
+                <dt class="col-sm-3">
+                    Quantity
+                </dt>
+
+                <dd class="col-sm-9">
+                    @Model.Quantity
+                </dd>
+
+
+                <dt class="col-sm-3">
+                    Description
+                </dt>
+
+                <dd class="col-sm-9">
+                    @Model.Description
+                </dd>
+
+
+                <dt class="col-sm-3">
+                    Status
+                </dt>
+
+                <dd class="col-sm-9">
+
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge bg-success">
+                            Active
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">
+                            Inactive
+                        </span>
+                    }
+
+                </dd>
+
+
+                <dt class="col-sm-3">
+                    Listed On
+                </dt>
+
+                <dd class="col-sm-9">
+                    @Model.ListedAt.ToString("dd MMM yyyy")
+                </dd>
+
+            </dl>
+
+
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn btn-warning">
+
+                Edit
+
+            </a>
+
+
+            <a asp-action="Index"
+               class="btn btn-secondary">
+
+                Back
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>

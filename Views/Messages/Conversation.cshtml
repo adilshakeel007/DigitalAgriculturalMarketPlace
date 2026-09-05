@@ -1,0 +1,121 @@
+﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Message>
+
+@{
+    ViewData["Title"] = "Conversation";
+
+    int currentUserId =
+        Context.Session.GetInt32("UserId") ?? 0;
+}
+
+<div class="container mt-4">
+
+    <h2>
+        Conversation with @ViewBag.OtherUserName
+    </h2>
+
+    @if (ViewBag.ProductName != null)
+    {
+        <p class="text-muted">
+            Product: @ViewBag.ProductName
+        </p>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <hr />
+
+    <div class="mb-4">
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info">
+                No messages yet.
+            </div>
+        }
+        else
+        {
+            @foreach (var message in Model)
+            {
+                bool sentByMe =
+                message.SenderId == currentUserId;
+
+                <div class="card mb-2">
+
+                    <div class="card-body">
+
+                        <strong>
+                            @(sentByMe
+                                                ? "You"
+                                                : message.Sender?.Name)
+                                                                   </strong>
+
+                        <p class="mb-1 mt-2">
+                            @message.Content
+                        </p>
+
+                        <small class="text-muted">
+                            @(message.SentAt
+                                                .ToString("dd MMM yyyy hh:mm tt"))
+                </small>
+
+                    </div>
+
+                </div>
+                }
+        }
+
+    </div>
+
+    <hr />
+
+    <h5>Reply</h5>
+
+    <form asp-controller="Messages"
+          asp-action="Send"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <input type="hidden"
+               name="ReceiverId"
+               value="@ViewBag.OtherUserId" />
+
+        <input type="hidden"
+               name="ProductId"
+               value="@ViewBag.ProductId" />
+
+        <div class="mb-3">
+
+            <textarea name="Content"
+                      class="form-control"
+                      rows="3"
+                      required
+                      maxlength="2000"
+                      placeholder="Write a reply...">
+            </textarea>
+
+        </div>
+
+        <button type="submit"
+                class="btn btn-primary">
+
+            Send Reply
+
+        </button>
+
+        <a asp-controller="Messages"
+           asp-action="Inbox"
+           class="btn btn-secondary">
+
+            Back to Inbox
+
+        </a>
+
+    </form>
+
+</div>

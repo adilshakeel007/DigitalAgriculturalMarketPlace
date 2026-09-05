@@ -1,0 +1,138 @@
+﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Product>
+
+@{
+    ViewData["Title"] = "Manage Products";
+}
+
+<div class="container mt-4">
+
+    <h2>
+        Manage Products
+    </h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <div class="table-responsive">
+
+        <table class="table table-bordered table-hover">
+
+            <thead>
+
+                <tr>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Farmer</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @foreach (var product in Model)
+                {
+                    <tr>
+
+                        <td>
+                            @product.Id
+                        </td>
+
+                        <td>
+
+                            @if (!string.IsNullOrEmpty(
+                                                    product.ImageUrl))
+                            {
+                                <img src="@product.ImageUrl"
+                                     width="60"
+                                     height="60"
+                                     style="object-fit:cover;" />
+                            }
+
+                        </td>
+
+                        <td>
+                            @product.Name
+                        </td>
+
+                        <td>
+                            @product.Farmer?.Name
+                        </td>
+
+                        <td>
+                            @product.Category
+                        </td>
+
+                        <td>
+                            Rs.
+                            @product.PricePerUnit.ToString("N2")
+                        </td>
+
+                        <td>
+                            @product.Quantity
+                        </td>
+
+                        <td>
+
+                            @if (product.IsActive)
+                            {
+                                <span class="badge bg-success">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">
+                                    Inactive
+                                </span>
+                            }
+
+                    </td>
+
+                    <td>
+
+                        <form asp-controller="Admin"
+                              asp-action="ToggleProductStatus"
+                              method="post">
+
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden"
+                                   name="id"
+                                   value="@product.Id" />
+
+                            <button type="submit"
+                                    class="btn btn-sm
+                                        @(product.IsActive
+                                                                                ? "btn-danger"
+                                                                                : "btn-success")">
+
+                                @(product.IsActive
+                                                                ? "Deactivate"
+                                                                : "Activate")
+
+                            </button>
+
+                            </form>
+
+                        </td>
+
+                    </tr>
+                                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>

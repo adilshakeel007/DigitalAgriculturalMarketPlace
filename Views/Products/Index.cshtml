@@ -1,0 +1,131 @@
+﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Product>
+
+@{
+    ViewData["Title"] = "My Products";
+}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h2>My Products</h2>
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        <a asp-controller="Products"
+           asp-action="Create"
+           class="btn btn-success">
+            + Add Product
+        </a>
+
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            You have not added any products yet.
+        </div>
+    }
+    else
+    {
+        <table class="table table-bordered table-striped">
+
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Listed Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (var product in Model)
+                {
+                    <tr>
+                        <td>
+
+                            @if (!string.IsNullOrEmpty(product.ImageUrl))
+                            {
+                                <img src="@product.ImageUrl"
+                                     alt="@product.Name"
+                                     width="80"
+                                     height="80"
+                                     style="object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <span>No Image</span>
+                            }
+
+                        </td>
+
+                        <td>@product.Name</td>
+
+                        <td>@product.Category</td>
+
+                        <td>
+                            Rs. @product.PricePerUnit
+                        </td>
+
+                        <td>@product.Quantity</td>
+
+                        <td>
+                            @if (product.IsActive)
+                            {
+                                <span class="badge bg-success">
+                                    Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    Inactive
+                                </span>
+                            }
+                        </td>
+
+                        <td>
+                            @product.ListedAt.ToString("dd MMM yyyy")
+                        </td>
+
+                        <td>
+
+                            <a asp-action="Details"
+                               asp-route-id="@product.Id"
+                               class="btn btn-sm btn-info">
+                                Details
+                            </a>
+
+                            <a asp-action="Edit"
+                               asp-route-id="@product.Id"
+                               class="btn btn-sm btn-warning">
+                                Edit
+                            </a>
+
+                            <a asp-action="Delete"
+                               asp-route-id="@product.Id"
+                               class="btn btn-sm btn-danger">
+                                Delete
+                            </a>
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+    }
+
+</div>

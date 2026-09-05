@@ -1,0 +1,388 @@
+﻿@model DigitalAgriculturalMarketplace.ViewModels.AdminReportsViewModel
+
+@{
+    ViewData["Title"] = "Reports & Analytics";
+}
+<div class="container mt-4">
+
+    <div class="mb-4">
+
+        <h2>
+            Reports & Analytics
+        </h2>
+
+        <p class="text-muted">
+            Platform performance summary.
+        </p>
+
+    </div>
+
+
+    <div class="row">
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm">
+
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Total Users
+                    </h6>
+
+                    <h3>
+                        @Model.TotalUsers
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm">
+
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        New Users This Month
+                    </h6>
+
+                    <h3>
+                        @Model.NewUsersThisMonth
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm">
+
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Total Revenue
+                    </h6>
+
+                    <h3>
+                        Rs.
+                        @Model.TotalRevenue.ToString("N2")
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card shadow-sm">
+
+                <div class="card-body">
+
+                    <h6 class="text-muted">
+                        Revenue This Month
+                    </h6>
+
+                    <h3>
+                        Rs.
+                        @Model.RevenueThisMonth.ToString("N2")
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <hr class="my-4" />
+
+    <h4>
+        Order Status Breakdown
+    </h4>
+
+
+    <div class="row mt-3">
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6>
+                        Pending
+                    </h6>
+
+                    <h3>
+                        @Model.PendingOrders
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6>
+                        Confirmed
+                    </h6>
+
+                    <h3>
+                        @Model.ConfirmedOrders
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6>
+                        Completed
+                    </h6>
+
+                    <h3>
+                        @Model.CompletedOrders
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h6>
+                        Cancelled
+                    </h6>
+
+                    <h3>
+                        @Model.CancelledOrders
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <p>
+        <strong>Total Orders:</strong>
+        @Model.TotalOrders
+    </p>
+    <hr class="my-4" />
+
+    <h4>
+        Top Selling Products
+    </h4>
+
+
+@if (!Model.TopProducts.Any())
+{
+        <div class="alert alert-info">
+
+            No completed sales available yet.
+
+        </div>
+}
+else
+{
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-hover">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Rank
+                        </th>
+
+                        <th>
+                            Product
+                        </th>
+
+                        <th>
+                            Quantity Sold
+                        </th>
+
+                        <th>
+                            Revenue
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    @{
+                        int productRank = 1;
+                    }
+
+                    @foreach (
+                                    var product in Model.TopProducts)
+                    {
+                        <tr>
+
+                            <td>
+                                @productRank
+                            </td>
+
+                            <td>
+                                @product.ProductName
+                            </td>
+
+                            <td>
+                                @product.TotalQuantitySold
+                            </td>
+
+                            <td>
+                                Rs.
+                                @product.Revenue.ToString("N2")
+                            </td>
+
+                        </tr>
+
+                        productRank++;
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+}
+    <hr class="my-4" />
+
+    <h4>
+        Top Farmers
+    </h4>
+
+
+@if (!Model.TopFarmers.Any())
+{
+        <div class="alert alert-info">
+
+            No completed Farmer sales available yet.
+
+        </div>
+}
+else
+{
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-hover">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Rank
+                        </th>
+
+                        <th>
+                            Farmer
+                        </th>
+
+                        <th>
+                            Completed Orders
+                        </th>
+
+                        <th>
+                            Revenue
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    @{
+                        int farmerRank = 1;
+                    }
+
+                    @foreach (
+                                    var farmer in Model.TopFarmers)
+                    {
+                        <tr>
+
+                            <td>
+                                @farmerRank
+                            </td>
+
+                            <td>
+                                @farmer.FarmerName
+                            </td>
+
+                            <td>
+                                @farmer.CompletedOrders
+                            </td>
+
+                            <td>
+                                Rs.
+                                @farmer.Revenue.ToString("N2")
+                            </td>
+
+                        </tr>
+
+                        farmerRank++;
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+}
+    <div class="mt-4">
+
+        <a asp-controller="Admin"
+           asp-action="Dashboard"
+           class="btn btn-secondary">
+
+            Back to Admin Dashboard
+
+        </a>
+
+    </div>
+
+</div>

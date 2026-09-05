@@ -1,0 +1,204 @@
+﻿FarmerOrderDetails.cshtml@model DigitalAgriculturalMarketplace.Models.Order
+
+@{
+    ViewData["Title"] = "Order Details";
+}
+
+<div class="container mt-4">
+
+    <h2>Order Details</h2>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <hr />
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <p>
+                <strong>Order ID:</strong>
+                @Model.Id
+            </p>
+
+            <p>
+                <strong>Product:</strong>
+                @Model.Product?.Name
+            </p>
+
+            <p>
+                <strong>Consumer:</strong>
+                @Model.Consumer?.Name
+            </p>
+            <p>
+                <strong>Consumer Phone:</strong>
+                @Model.Consumer?.Phone
+            </p>
+
+            <p>
+                <strong>Quantity:</strong>
+                @Model.Quantity
+            </p>
+
+            <p>
+                <strong>Total Price:</strong>
+                Rs. @Model.TotalPrice.ToString("N2")
+            </p>
+
+            <p>
+                <strong>Order Date:</strong>
+                @(Model.OrderDate.ToString("dd MMM yyyy hh:mm tt"))
+            </p>
+
+            <p>
+                <strong>Current Status:</strong>
+
+                @if (Model.Status == "Pending")
+                {
+                    <span class="badge bg-warning text-dark">
+                        Pending
+                    </span>
+                }
+                else if (Model.Status == "Confirmed")
+                {
+                    <span class="badge bg-primary">
+                        Confirmed
+                    </span>
+                }
+                else if (Model.Status == "Completed")
+                {
+                    <span class="badge bg-success">
+                        Completed
+                    </span>
+                }
+                else if (Model.Status == "Cancelled")
+                {
+                    <span class="badge bg-danger">
+                        Cancelled
+                    </span>
+                }
+
+            </p>
+
+            <hr />
+
+            <h5>Manage Order</h5>
+
+            @if (Model.Status == "Pending")
+            {
+                <form asp-controller="Orders"
+                      asp-action="UpdateStatus"
+                      method="post"
+                      class="d-inline">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="id"
+                           value="@Model.Id" />
+
+                    <input type="hidden"
+                           name="status"
+                           value="Confirmed" />
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        Confirm Order
+
+                    </button>
+
+                </form>
+            }
+
+            @if (Model.Status == "Confirmed")
+            {
+                <form asp-controller="Orders"
+                      asp-action="UpdateStatus"
+                      method="post"
+                      class="d-inline">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="id"
+                           value="@Model.Id" />
+
+                    <input type="hidden"
+                           name="status"
+                           value="Completed" />
+
+                    <button type="submit"
+                            class="btn btn-success">
+
+                        Mark Completed
+
+                    </button>
+
+                </form>
+            }
+
+            @if (Model.Status == "Pending" ||
+                        Model.Status == "Confirmed")
+            {
+                <form asp-controller="Orders"
+                      asp-action="UpdateStatus"
+                      method="post"
+                      class="d-inline">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="id"
+                           value="@Model.Id" />
+
+                    <input type="hidden"
+                           name="status"
+                           value="Cancelled" />
+
+                    <button type="submit"
+                            class="btn btn-danger">
+
+                        Cancel Order
+
+                    </button>
+
+                </form>
+            }
+            @if (Model.Consumer != null)
+            {
+                <a asp-controller="Messages"
+                   asp-action="Send"
+                   asp-route-receiverId="@Model.Consumer.Id"
+                   asp-route-productId="@Model.ProductId"
+                   class="btn btn-outline-primary">
+
+                    Message Consumer
+
+                </a>
+            }
+
+            <a asp-controller="Orders"
+               asp-action="FarmerOrders"
+               class="btn btn-secondary">
+
+                Back to Orders
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>

@@ -1,0 +1,91 @@
+﻿@model DigitalAgriculturalMarketplace.ViewModels.SendMessageViewModel
+
+@{
+    ViewData["Title"] = "Send Message";
+}
+
+<div class="container mt-4">
+
+    <h2>Send Message</h2>
+
+    <div class="row">
+        <div class="col-12 col-md-8 col-lg-7">
+
+        <div class="card-body">
+
+            <p>
+                <strong>To:</strong>
+                @Model.ReceiverName
+            </p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ProductName))
+            {
+                <p>
+                    <strong>Product:</strong>
+                    @Model.ProductName
+                </p>
+            }
+
+            <form asp-controller="Messages"
+                  asp-action="Send"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       asp-for="ReceiverId" />
+
+                <input type="hidden"
+                       asp-for="ProductId" />
+
+                <div asp-validation-summary="ModelOnly"
+                     class="text-danger mb-3">
+                </div>
+
+                <div class="mb-3">
+
+                    <label asp-for="Content"
+                           class="form-label">
+                        Message
+                    </label>
+
+                    <textarea asp-for="Content"
+                              class="form-control"
+                              rows="5"
+                              placeholder="Write your message...">
+                    </textarea>
+
+                    <span asp-validation-for="Content"
+                          class="text-danger">
+                    </span>
+
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary">
+
+                    Send Message
+
+                </button>
+
+                <a asp-controller="Messages"
+                   asp-action="Inbox"
+                   class="btn btn-secondary">
+
+                    Cancel
+
+                </a>
+
+            </form>
+
+          </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
