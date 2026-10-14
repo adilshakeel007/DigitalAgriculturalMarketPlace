@@ -1,232 +1,111 @@
-﻿<!DOCTYPE html>
+@{
+    string? userType = Context.Session.GetString("UserType");
+    string? userName = Context.Session.GetString("UserName");
+    bool isSignedIn = Context.Session.GetInt32("UserId") != null;
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+
+    string ActiveLink(string controller, string? action = null)
+    {
+        bool controllerMatches = string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase);
+        bool actionMatches = action == null || string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase);
+        return controllerMatches && actionMatches ? "active" : string.Empty;
+    }
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - DigitalAgriculturalMarketPlace</title>
+    <meta name="description" content="A trusted digital marketplace connecting local farmers and consumers." />
+    <title>@ViewData["Title"] | AgriMarket</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/DigitalAgriculturalMarketPlace.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        @{
-            string? currentUserType =
-            Context.Session.GetString("UserType");
-        }
-        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">DigitalAgriculturalMarketPlace</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="site-header">
+        <nav class="navbar navbar-expand-lg" aria-label="Main navigation">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index" aria-label="AgriMarket home">
+                    <span class="brand-mark" aria-hidden="true">A</span>
+                    <span>Agri<span class="brand-accent">Market</span></span>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation"
+                        aria-controls="mainNavigation" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        @if (currentUserType == "Admin")
+
+                <div class="collapse navbar-collapse" id="mainNavigation">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        @if (!isSignedIn)
                         {
-                            <li class="nav-item">
-
-                                <a class="nav-link text-dark"
-                                   asp-controller="Admin"
-                                   asp-action="Dashboard">
-
-                                    Admin Dashboard
-
-                                </a>
-
-                            </li>
-
-                            <li class="nav-item">
-
-                                <a class="nav-link text-dark"
-                                   asp-controller="Admin"
-                                   asp-action="Users">
-
-                                    Users
-
-                                </a>
-
-                            </li>
-
-                            <li class="nav-item">
-
-                                <a class="nav-link text-dark"
-                                   asp-controller="Admin"
-                                   asp-action="Products">
-
-                                    Products
-
-                                </a>
-
-                            </li>
-
-                            <li class="nav-item">
-
-                                <a class="nav-link text-dark"
-                                   asp-controller="Admin"
-                                   asp-action="Orders">
-
-                                    Orders
-
-                                </a>
-
-                            </li>
-                            <li class="nav-item">
-
-                                <a class="nav-link text-dark"
-                                   asp-controller="Admin"
-                                   asp-action="Reports">
-
-                                    Reports
-
-                                </a>
-
-                            </li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Home", "Index")" asp-controller="Home" asp-action="Index">Home</a></li>
                         }
-                        @if (Context.Session.GetInt32("UserId") == null)
+                        else if (userType == "Farmer")
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark"
-                                   asp-controller="Account"
-                                   asp-action="Login">
-                                    Login
-                                </a>
-                            </li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Home", "FarmerDashboard")" asp-controller="Home" asp-action="FarmerDashboard">Overview</a></li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Products")" asp-controller="Products" asp-action="Index">Products</a></li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Orders")" asp-controller="Orders" asp-action="FarmerOrders">Orders</a></li>
+                        }
+                        else if (userType == "Consumer")
+                        {
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Home", "ConsumerDashboard")" asp-controller="Home" asp-action="ConsumerDashboard">Overview</a></li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Marketplace")" asp-controller="Marketplace" asp-action="Index">Marketplace</a></li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Orders")" asp-controller="Orders" asp-action="MyOrders">My orders</a></li>
+                        }
+                        else if (userType == "Admin")
+                        {
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Admin", "Dashboard")" asp-controller="Admin" asp-action="Dashboard">Overview</a></li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Admin", "Users")" asp-controller="Admin" asp-action="Users">Users</a></li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Admin", "Products")" asp-controller="Admin" asp-action="Products">Products</a></li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Admin", "Orders")" asp-controller="Admin" asp-action="Orders">Orders</a></li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Admin", "Reports")" asp-controller="Admin" asp-action="Reports">Reports</a></li>
+                        }
+                    </ul>
 
-                            <li class="nav-item">
-                                <a class="nav-link text-dark"
-                                   asp-controller="Account"
-                                   asp-action="Register">
-                                    Register
-                                </a>
-                            </li>
+                    <div class="navbar-actions">
+                        @if (!isSignedIn)
+                        {
+                            <a class="btn btn-link nav-login" asp-controller="Account" asp-action="Login">Sign in</a>
+                            <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Create account</a>
                         }
                         else
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark"
-                                   asp-controller="Messages"
-                                   asp-action="Inbox">
-                                    Messages
-                                </a>
-                            </li>
-                            <li class="nav-item">
-
-                                <a class="nav-link text-dark"
-                                   asp-controller="Notifications"
-                                   asp-action="Index">
-
-                                    Notifications
-
-                                </a>
-
-                            </li>
-
-                            <li class="nav-item">
-                                <span class="nav-link text-dark">
-                                    Hello, @Context.Session.GetString("UserName")
-                                </span>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link text-danger"
-                                   asp-controller="Account"
-                                   asp-action="Logout">
-                                    Logout
-                                </a>
-                            </li>
+                            @if (userType != "Admin")
+                            {
+                                <a class="nav-utility @ActiveLink("Messages")" asp-controller="Messages" asp-action="Inbox">Messages</a>
+                                <a class="nav-utility @ActiveLink("Notifications")" asp-controller="Notifications" asp-action="Index">Notifications</a>
+                            }
+                            <div class="dropdown">
+                                <button class="user-menu dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="user-avatar" aria-hidden="true">@(string.IsNullOrWhiteSpace(userName) ? "U" : userName.Substring(0, 1).ToUpperInvariant())</span>
+                                    <span class="user-details"><strong>@userName</strong><small>@userType</small></span>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-end">
+                                    <form asp-controller="Account" asp-action="Logout" method="post">
+                                        <button class="dropdown-item text-danger" type="submit">Sign out</button>
+                                    </form>
+                                </div>
+                            </div>
                         }
-                        @if (currentUserType == "Farmer")
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark"
-                                   asp-controller="Home"
-                                   asp-action="FarmerDashboard">
-                                    Farmer Dashboard
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark"
-                                   asp-controller="Products"
-                                   asp-action="Index">
-                                    My Products
-                                </a>
-                            </li>
-                            <li class="nav-item">
-
-                                <a class="nav-link text-dark"
-                                   asp-controller="Orders"
-                                   asp-action="FarmerOrders">
-
-                                    Orders
-
-                                </a>
-
-                            </li>
-                        }
-
-                        @if (currentUserType == "Consumer")
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark"
-                                   asp-controller="Home"
-                                   asp-action="ConsumerDashboard">
-                                    Consumer Dashboard
-                                </a>
-                            </li>
-                            <li class="nav-item">
-
-                                <a class="nav-link text-dark"
-                                   asp-controller="Marketplace"
-                                   asp-action="Index">
-
-                                    Marketplace
-
-                                </a>
-
-                            </li>
-                            <li class="nav-item">
-
-                                <a class="nav-link text-dark"
-                                   asp-controller="Orders"
-                                   asp-action="MyOrders">
-
-                                    My Orders
-
-                                </a>
-
-                            </li>
-                            
-                        }
-
-                    </ul>
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted mt-5">
+    <main id="main-content" class="page-shell" tabindex="-1">@RenderBody()</main>
 
-        <div class="container">
-
-            &copy; @DateTime.Now.Year -
-            Digital Agricultural Marketplace
-
+    <footer class="site-footer">
+        <div class="container footer-content">
+            <div><a class="footer-brand" asp-controller="Home" asp-action="Index">AgriMarket</a><p>Fresh connections. Fair trade. Stronger communities.</p></div>
+            <div class="footer-links"><a asp-controller="Home" asp-action="Privacy">Privacy</a><span>&copy; @DateTime.Now.Year AgriMarket</span></div>
         </div>
-
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

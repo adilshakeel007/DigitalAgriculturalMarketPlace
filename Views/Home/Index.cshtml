@@ -1,8 +1,86 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Fresh food, direct from local farmers";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="hero">
+    <div class="container hero-grid">
+        <div>
+            <p class="eyebrow">A better local food marketplace</p>
+            <h1>Fresh produce. Fair prices. Direct connections.</h1>
+            <p class="hero-copy">
+                AgriMarket brings farmers and consumers together in one trusted place—making it simpler to list produce,
+                discover what is in season, manage orders, and build lasting local relationships.
+            </p>
+            <div class="hero-actions">
+                <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Register">Join the marketplace</a>
+                <a class="btn btn-outline-primary btn-lg" asp-controller="Account" asp-action="Login">Sign in</a>
+            </div>
+            <div class="hero-trust" aria-label="Marketplace benefits">
+                <span>Verified accounts</span>
+                <span>Direct messaging</span>
+                <span>Transparent orders</span>
+            </div>
+        </div>
+
+        <div class="hero-visual" aria-label="Fresh agricultural products illustration">
+            <div class="produce-grid">
+                <div class="produce-card">
+                    <span class="produce-symbol" aria-hidden="true">&#127793;</span>
+                    <strong>Farm fresh</strong>
+                    <span>Listed directly by local growers</span>
+                </div>
+                <div class="produce-card">
+                    <span class="produce-symbol" aria-hidden="true">&#127813;</span>
+                    <strong>In season</strong>
+                    <span>Discover available produce</span>
+                </div>
+                <div class="produce-card">
+                    <span class="produce-symbol" aria-hidden="true">&#129388;</span>
+                    <strong>Fair trade</strong>
+                    <span>Clear pricing and order status</span>
+                </div>
+            </div>
+            <div class="floating-stat"><strong>Farm to table</strong><span>Without the unnecessary distance</span></div>
+        </div>
+    </div>
+</section>
+
+<section class="feature-section">
+    <div class="container">
+        <div class="section-heading">
+            <p class="eyebrow">How it works</p>
+            <h2>Everything needed for a confident transaction</h2>
+            <p>Simple tools for both sides of the marketplace, built around clarity and trust.</p>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <article class="feature-card">
+                    <span class="feature-number">01</span>
+                    <h3 class="h5">Farmers list with ease</h3>
+                    <p class="mb-0">Add photos, set available quantity, and manage every product from one focused dashboard.</p>
+                </article>
+            </div>
+            <div class="col-md-4">
+                <article class="feature-card">
+                    <span class="feature-number">02</span>
+                    <h3 class="h5">Consumers shop clearly</h3>
+                    <p class="mb-0">Search by product, category, and price, then order directly from the farmer.</p>
+                </article>
+            </div>
+            <div class="col-md-4">
+                <article class="feature-card">
+                    <span class="feature-number">03</span>
+                    <h3 class="h5">Everyone stays informed</h3>
+                    <p class="mb-0">Track order progress, receive notifications, message securely, and share verified reviews.</p>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container py-5 text-center">
+    <p class="eyebrow">Grow with your community</p>
+    <h2>Ready to get started?</h2>
+    <p class="mx-auto mb-4" style="max-width: 560px;">Create a farmer or consumer account in minutes and make your next local connection.</p>
+    <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Create your free account</a>
+</section>

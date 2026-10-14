@@ -1,422 +1,69 @@
-﻿@model DigitalAgriculturalMarketplace.ViewModels.FarmerDashboardViewModel
+@model DigitalAgriculturalMarketplace.ViewModels.FarmerDashboardViewModel
+@{ ViewData["Title"] = "Farmer overview"; }
 
-@{
-    ViewData["Title"] = "Farmer Dashboard";
-}
+<div class="management-shell">
+    <partial name="_FarmerSidebar" />
 
-<div class="container mt-4">
+    <div class="management-content">
+        <div class="management-header">
+            <div><h1>Overview</h1><p>Manage today’s orders and keep inventory ready for customers.</p></div>
+            <a class="btn btn-primary btn-sm" asp-controller="Products" asp-action="Create">Add product</a>
+        </div>
 
-    <div class="mb-4">
+        @if (Model.LowStockProducts > 0)
+        {
+            <div class="alert alert-warning d-flex align-items-center justify-content-between gap-3" role="alert">
+                <span><strong>@Model.LowStockProducts product(s)</strong> have five or fewer units remaining.</span>
+                <a asp-controller="Products" asp-action="Index" class="btn btn-sm btn-warning">Review inventory</a>
+            </div>
+        }
 
-        <h2>
-            Farmer Dashboard
-        </h2>
+        <div class="management-kpis">
+            <div class="compact-kpi"><span class="compact-kpi-label">Pending orders</span><span class="compact-kpi-value">@Model.PendingOrders</span><span class="compact-kpi-meta">Need your attention</span></div>
+            <div class="compact-kpi"><span class="compact-kpi-label">Confirmed orders</span><span class="compact-kpi-value">@Model.ConfirmedOrders</span><span class="compact-kpi-meta">Ready to fulfil</span></div>
+            <div class="compact-kpi"><span class="compact-kpi-label">Active products</span><span class="compact-kpi-value">@Model.ActiveProducts</span><span class="compact-kpi-meta">of @Model.TotalProducts total</span></div>
+            <div class="compact-kpi"><span class="compact-kpi-label">Completed revenue</span><span class="compact-kpi-value">Rs. @Model.TotalRevenue.ToString("N0")</span><span class="compact-kpi-meta">From completed orders</span></div>
+        </div>
 
-        <p class="text-muted">
-            Welcome,
-            @Context.Session.GetString("UserName")
-        </p>
+        <div class="workspace-grid">
+            <section class="panel" aria-labelledby="recentOrdersTitle">
+                <div class="panel-header"><div><h2 id="recentOrdersTitle">Recent orders</h2><p>Latest customer activity</p></div><a class="panel-link" asp-controller="Orders" asp-action="FarmerOrders">View all</a></div>
+                @if (!Model.RecentOrders.Any())
+                {
+                    <div class="panel-body"><div class="empty-state"><h3 class="h6">No orders yet</h3><p class="mb-0">Customer orders will appear here.</p></div></div>
+                }
+                else
+                {
+                    <div class="table-responsive border-0 rounded-0 shadow-none"><table class="table table-hover">
+                        <thead><tr><th>Order</th><th>Product</th><th>Customer</th><th>Total</th><th>Status</th><th></th></tr></thead>
+                        <tbody>@foreach (var order in Model.RecentOrders) { <tr><td>#@order.Id</td><td><strong>@order.Product?.Name</strong><div class="product-meta">Qty @order.Quantity</div></td><td>@order.Consumer?.Name</td><td>Rs. @order.TotalPrice.ToString("N2")</td><td><partial name="_OrderStatus" model="order.Status" /></td><td><a class="btn btn-sm btn-secondary" asp-controller="Orders" asp-action="FarmerOrderDetails" asp-route-id="@order.Id">Manage</a></td></tr> }</tbody>
+                    </table></div>
+                }
+            </section>
 
+            <div class="d-grid gap-3">
+                <section class="panel" aria-labelledby="inventoryTitle">
+                    <div class="panel-header"><div><h2 id="inventoryTitle">Inventory</h2><p>@Model.TotalStockUnits active units listed</p></div><a class="panel-link" asp-controller="Products" asp-action="Index">Manage</a></div>
+                    <div class="panel-body pt-0 pb-0">
+                        @if (!Model.InventoryOverview.Any()) { <p class="text-muted small py-3 mb-0">No products added yet.</p> }
+                        @foreach (var product in Model.InventoryOverview)
+                        {
+                            string stockClass = product.Quantity == 0 ? "out" : product.Quantity <= 5 ? "low" : string.Empty;
+                            <div class="inventory-row"><div><strong>@product.Name</strong><small>@product.Category · @(product.IsActive ? "Active" : "Inactive")</small></div><span class="stock-value @stockClass">@(product.Quantity == 0 ? "Out of stock" : $"{product.Quantity} units")</span></div>
+                        }
+                    </div>
+                </section>
+
+                <section class="panel" aria-labelledby="quickActionsTitle">
+                    <div class="panel-header"><h2 id="quickActionsTitle">Quick actions</h2></div>
+                    <div class="panel-body management-actions">
+                        <a class="management-action" asp-controller="Products" asp-action="Create"><span>Add a product</span><span aria-hidden="true">&rarr;</span></a>
+                        <a class="management-action" asp-controller="Orders" asp-action="FarmerOrders"><span>Process orders</span><span aria-hidden="true">&rarr;</span></a>
+                        <a class="management-action" asp-controller="Messages" asp-action="Inbox"><span>Messages (@Model.UnreadMessages)</span><span aria-hidden="true">&rarr;</span></a>
+                        <a class="management-action" asp-controller="Notifications" asp-action="Index"><span>Notifications (@Model.UnreadNotifications)</span><span aria-hidden="true">&rarr;</span></a>
+                    </div>
+                </section>
+            </div>
+        </div>
     </div>
-
-
-    <!-- SUMMARY CARDS -->
-
-    <div class="row">
-
-        <div class="col-12 col-sm-6 col-lg-3 mb-3">
-
-            <div class="card shadow-sm dashboard-card">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Total Products
-                    </h6>
-
-                    <h3>
-                        @Model.TotalProducts
-                    </h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-12 col-sm-6 col-lg-3 mb-3">
-
-            <div class="card shadow-sm dashboard-card">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Active Products
-                    </h6>
-
-                    <h3>
-                        @Model.ActiveProducts
-                    </h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-12 col-sm-6 col-lg-3 mb-3">
-
-            <div class="card shadow-sm dashboard-card">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Pending Orders
-                    </h6>
-
-                    <h3>
-                        @Model.PendingOrders
-                    </h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-12 col-sm-6 col-lg-3 mb-3">
-
-            <div class="card shadow-sm dashboard-card">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Confirmed Orders
-                    </h6>
-
-                    <h3>
-                        @Model.ConfirmedOrders
-                    </h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div class="row">
-
-        <div class="col-12 col-md-4 mb-3">
-
-            <div class="card shadow-sm dashboard-card">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Completed Orders
-                    </h6>
-
-                    <h3>
-                        @Model.CompletedOrders
-                    </h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-12 col-md-4 mb-3">
-
-            <div class="card shadow-sm dashboard-card">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Total Revenue
-                    </h6>
-
-                    <h3>
-                        Rs. @Model.TotalRevenue.ToString("N2")
-                    </h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-12 col-md-4 mb-3">
-
-            <div class="card shadow-sm dashboard-card">
-
-                <div class="card-body">
-
-                    <h6 class="text-muted">
-                        Unread Messages
-                    </h6>
-
-                    <h3>
-                        @Model.UnreadMessages
-                    </h3>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-    <div class="col-12 col-md-4 mb-3">
-
-        <div class="card shadow-sm dashboard-card">
-
-            <div class="card-body">
-
-                <h6 class="text-muted">
-                    Unread Notifications
-                </h6>
-
-                <h3>
-                    @Model.UnreadNotifications
-                </h3>
-
-                <a asp-controller="Notifications"
-                   asp-action="Index">
-
-                    View Notifications
-
-                </a>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <hr class="my-4" />
-
-
-    <!-- QUICK ACTIONS -->
-
-    <h4>
-        Quick Actions
-    </h4>
-
-    <div class="mb-4 d-flex flex-wrap gap-2">
-
-        <a asp-controller="Products"
-           asp-action="Create"
-           class="btn btn-success">
-            + Add Product
-        </a>
-
-        <a asp-controller="Products"
-           asp-action="Index"
-           class="btn btn-primary">
-            My Products
-        </a>
-
-        <a asp-controller="Orders"
-           asp-action="FarmerOrders"
-           class="btn btn-warning">
-            Manage Orders
-        </a>
-
-        <a asp-controller="Messages"
-           asp-action="Inbox"
-           class="btn btn-secondary">
-            Messages
-        </a>
-
-    </div>
-
-
-    <hr class="my-4" />
-
-
-    <!-- RECENT ORDERS -->
-
-    <div class="d-flex
-                justify-content-between
-                align-items-center">
-
-        <h4>
-            Recent Orders
-        </h4>
-
-        <a asp-controller="Orders"
-           asp-action="FarmerOrders">
-
-            View All Orders
-
-        </a>
-
-    </div>
-
-
-    @if (!Model.RecentOrders.Any())
-    {
-        <div class="alert alert-info mt-3">
-
-            You have not received any orders yet.
-
-        </div>
-    }
-    else
-    {
-        <div class="table-responsive mt-3">
-
-            <table class="table table-bordered table-hover">
-
-                <thead>
-
-                    <tr>
-
-                        <th>
-                            Order ID
-                        </th>
-
-                        <th>
-                            Product
-                        </th>
-
-                        <th>
-                            Consumer
-                        </th>
-
-                        <th>
-                            Quantity
-                        </th>
-
-                        <th>
-                            Total
-                        </th>
-
-                        <th>
-                            Status
-                        </th>
-
-                        <th>
-                            Date
-                        </th>
-
-                        <th>
-                            Action
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    @foreach (
-                                    var order in Model.RecentOrders)
-                    {
-                        <tr>
-
-                            <td>
-                                @order.Id
-                            </td>
-
-                            <td>
-                                @order.Product?.Name
-                            </td>
-
-                            <td>
-                                @order.Consumer?.Name
-                            </td>
-
-                            <td>
-                                @order.Quantity
-                            </td>
-
-                            <td>
-                                Rs.
-                                @order.TotalPrice.ToString("N2")
-                            </td>
-
-                            <td>
-
-                                @if (
-                                                        order.Status == "Pending")
-                                {
-                                    <span class="badge bg-warning text-dark">
-
-                                        Pending
-
-                                    </span>
-                                }
-
-                                else if (
-                                order.Status == "Confirmed")
-                                {
-                                    <span class="badge bg-primary">
-
-                                        Confirmed
-
-                                    </span>
-                                }
-
-                                else if (
-                                order.Status == "Completed")
-                                {
-                                    <span class="badge bg-success">
-
-                                        Completed
-
-                                    </span>
-                                }
-
-                                else if (
-                                order.Status == "Cancelled")
-                                {
-                                    <span class="badge bg-danger">
-
-                                        Cancelled
-
-                                    </span>
-                                }
-
-                        </td>
-
-                        <td>
-                            @(order.OrderDate
-                                                    .ToString("dd MMM yyyy"))
-                    </td>
-
-                            <td>
-
-                                <a asp-controller="Orders"
-                                   asp-action="FarmerOrderDetails"
-                                   asp-route-id="@order.Id"
-                                   class="btn btn-sm btn-primary">
-
-                                    View
-
-                                </a>
-
-                            </td>
-
-                        </tr>
-                                }
-
-                </tbody>
-
-            </table>
-
-        </div>
-    }
-
 </div>

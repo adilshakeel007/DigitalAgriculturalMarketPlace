@@ -1,0 +1,12 @@
+@model DigitalAgriculturalMarketplace.Models.Product
+@if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+{
+    <div class="product-media"><img src="@Model.ImageUrl" alt="@Model.Name" loading="lazy" decoding="async" /></div>
+}
+else
+{
+    <div class="product-media product-media-fallback" role="img" aria-label="No image available for @Model.Name">
+        <span class="fallback-mark" aria-hidden="true">A</span>
+        <span>No image available</span>
+    </div>
+}

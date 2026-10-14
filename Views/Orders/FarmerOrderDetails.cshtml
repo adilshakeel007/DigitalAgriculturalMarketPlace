@@ -1,204 +1,41 @@
-﻿FarmerOrderDetails.cshtml@model DigitalAgriculturalMarketplace.Models.Order
+@model DigitalAgriculturalMarketplace.Models.Order
+@{ ViewData["Title"] = $"Order #{Model.Id}"; }
 
-@{
-    ViewData["Title"] = "Order Details";
-}
+<div class="management-shell">
+    <partial name="_FarmerSidebar" />
+    <div class="management-content">
+        <div class="management-header"><div><h1>Order #@Model.Id</h1><p>Placed @Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</p></div><a class="btn btn-secondary btn-sm" asp-action="FarmerOrders">Back to orders</a></div>
+        @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
+        @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div> }
 
-<div class="container mt-4">
-
-    <h2>Order Details</h2>
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">
-            @TempData["SuccessMessage"]
-        </div>
-    }
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger">
-            @TempData["ErrorMessage"]
-        </div>
-    }
-
-    <hr />
-
-    <div class="card">
-
-        <div class="card-body">
-
-            <p>
-                <strong>Order ID:</strong>
-                @Model.Id
-            </p>
-
-            <p>
-                <strong>Product:</strong>
-                @Model.Product?.Name
-            </p>
-
-            <p>
-                <strong>Consumer:</strong>
-                @Model.Consumer?.Name
-            </p>
-            <p>
-                <strong>Consumer Phone:</strong>
-                @Model.Consumer?.Phone
-            </p>
-
-            <p>
-                <strong>Quantity:</strong>
-                @Model.Quantity
-            </p>
-
-            <p>
-                <strong>Total Price:</strong>
-                Rs. @Model.TotalPrice.ToString("N2")
-            </p>
-
-            <p>
-                <strong>Order Date:</strong>
-                @(Model.OrderDate.ToString("dd MMM yyyy hh:mm tt"))
-            </p>
-
-            <p>
-                <strong>Current Status:</strong>
-
+        <div class="panel mb-3"><div class="panel-body"><partial name="_OrderProgress" model="Model.Status" /></div></div>
+        <div class="order-detail-grid">
+            <div class="d-grid gap-3">
+                <section class="panel"><div class="panel-header"><h2>Order details</h2><partial name="_OrderStatus" model="Model.Status" /></div><div class="panel-body"><dl class="detail-list">
+                    <dt>Product</dt><dd>@Model.Product?.Name</dd><dt>Quantity</dt><dd>@Model.Quantity unit(s)</dd><dt>Total</dt><dd>Rs. @Model.TotalPrice.ToString("N2")</dd><dt>Placed</dt><dd>@Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</dd>
+                </dl></div></section>
+                <section class="panel"><div class="panel-header"><h2>Customer</h2></div><div class="panel-body"><dl class="detail-list"><dt>Name</dt><dd>@Model.Consumer?.Name</dd><dt>Phone</dt><dd>@Model.Consumer?.Phone</dd></dl>@if (Model.Consumer != null) { <a class="btn btn-sm btn-outline-primary mt-3" asp-controller="Messages" asp-action="Send" asp-route-receiverId="@Model.Consumer.Id" asp-route-productId="@Model.ProductId">Message customer</a> }</div></section>
+            </div>
+            <aside class="panel align-self-start"><div class="panel-header"><h2>Next action</h2></div><div class="panel-body d-grid gap-2">
                 @if (Model.Status == "Pending")
                 {
-                    <span class="badge bg-warning text-dark">
-                        Pending
-                    </span>
+                    <p class="small text-muted">Confirm only when you can fulfil this order.</p>
+                    <form asp-action="UpdateStatus" method="post" data-confirm="Confirm this order for fulfilment?"><input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="status" value="Confirmed" /><button class="btn btn-primary w-100" type="submit">Confirm order</button></form>
                 }
                 else if (Model.Status == "Confirmed")
                 {
-                    <span class="badge bg-primary">
-                        Confirmed
-                    </span>
+                    <p class="small text-muted">Mark completed after the order has been fulfilled.</p>
+                    <form asp-action="UpdateStatus" method="post" data-confirm="Mark this order as completed? This cannot be undone."><input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="status" value="Completed" /><button class="btn btn-primary w-100" type="submit">Mark completed</button></form>
                 }
-                else if (Model.Status == "Completed")
+                else
                 {
-                    <span class="badge bg-success">
-                        Completed
-                    </span>
+                    <p class="small text-muted mb-0">This order is final and cannot be changed.</p>
                 }
-                else if (Model.Status == "Cancelled")
+                @if (Model.Status == "Pending" || Model.Status == "Confirmed")
                 {
-                    <span class="badge bg-danger">
-                        Cancelled
-                    </span>
+                    <form asp-action="UpdateStatus" method="post" data-confirm="Cancel this order and return its quantity to stock?"><input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="status" value="Cancelled" /><button class="btn btn-link text-danger w-100" type="submit">Cancel order</button></form>
                 }
-
-            </p>
-
-            <hr />
-
-            <h5>Manage Order</h5>
-
-            @if (Model.Status == "Pending")
-            {
-                <form asp-controller="Orders"
-                      asp-action="UpdateStatus"
-                      method="post"
-                      class="d-inline">
-
-                    @Html.AntiForgeryToken()
-
-                    <input type="hidden"
-                           name="id"
-                           value="@Model.Id" />
-
-                    <input type="hidden"
-                           name="status"
-                           value="Confirmed" />
-
-                    <button type="submit"
-                            class="btn btn-primary">
-
-                        Confirm Order
-
-                    </button>
-
-                </form>
-            }
-
-            @if (Model.Status == "Confirmed")
-            {
-                <form asp-controller="Orders"
-                      asp-action="UpdateStatus"
-                      method="post"
-                      class="d-inline">
-
-                    @Html.AntiForgeryToken()
-
-                    <input type="hidden"
-                           name="id"
-                           value="@Model.Id" />
-
-                    <input type="hidden"
-                           name="status"
-                           value="Completed" />
-
-                    <button type="submit"
-                            class="btn btn-success">
-
-                        Mark Completed
-
-                    </button>
-
-                </form>
-            }
-
-            @if (Model.Status == "Pending" ||
-                        Model.Status == "Confirmed")
-            {
-                <form asp-controller="Orders"
-                      asp-action="UpdateStatus"
-                      method="post"
-                      class="d-inline">
-
-                    @Html.AntiForgeryToken()
-
-                    <input type="hidden"
-                           name="id"
-                           value="@Model.Id" />
-
-                    <input type="hidden"
-                           name="status"
-                           value="Cancelled" />
-
-                    <button type="submit"
-                            class="btn btn-danger">
-
-                        Cancel Order
-
-                    </button>
-
-                </form>
-            }
-            @if (Model.Consumer != null)
-            {
-                <a asp-controller="Messages"
-                   asp-action="Send"
-                   asp-route-receiverId="@Model.Consumer.Id"
-                   asp-route-productId="@Model.ProductId"
-                   class="btn btn-outline-primary">
-
-                    Message Consumer
-
-                </a>
-            }
-
-            <a asp-controller="Orders"
-               asp-action="FarmerOrders"
-               class="btn btn-secondary">
-
-                Back to Orders
-
-            </a>
-
+            </div></aside>
         </div>
-
     </div>
-
 </div>

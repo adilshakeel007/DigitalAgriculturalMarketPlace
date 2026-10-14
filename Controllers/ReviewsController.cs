@@ -12,7 +12,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
     {
         public IActionResult Index()
         {
-            return View();
+            return RedirectToAction("MyOrders", "Orders");
         }
         private readonly ApplicationDbContext _context;
 

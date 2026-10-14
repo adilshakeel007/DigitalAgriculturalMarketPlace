@@ -35,8 +35,11 @@ namespace DigitalAgriculturalMarketplace.Controllers
             // SEARCH
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
+                searchTerm = searchTerm.Trim();
                 products = products.Where(p =>
-                    p.Name.Contains(searchTerm)
+                    p.Name.Contains(searchTerm) ||
+                    p.Category.Contains(searchTerm) ||
+                    (p.Description != null && p.Description.Contains(searchTerm))
                 );
             }
 
@@ -52,6 +55,8 @@ namespace DigitalAgriculturalMarketplace.Controllers
 
             // PRICE RANGE VALIDATION
             bool invalidPriceRange =
+                (minPrice.HasValue && minPrice.Value < 0) ||
+                (maxPrice.HasValue && maxPrice.Value < 0) ||
                 minPrice.HasValue &&
                 maxPrice.HasValue &&
                 minPrice.Value > maxPrice.Value;
@@ -59,7 +64,7 @@ namespace DigitalAgriculturalMarketplace.Controllers
             if (invalidPriceRange)
             {
                 ViewBag.PriceError =
-                    "Minimum price cannot be greater than maximum price.";
+                    "Enter a valid price range using values of zero or greater.";
             }
             else
             {

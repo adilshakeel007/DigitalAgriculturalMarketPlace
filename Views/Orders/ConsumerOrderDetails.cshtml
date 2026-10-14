@@ -1,173 +1,33 @@
-﻿@model DigitalAgriculturalMarketplace.Models.Order
+@model DigitalAgriculturalMarketplace.Models.Order
+@{ ViewData["Title"] = $"Order #{Model.Id}"; }
 
-@{
-    ViewData["Title"] = "Order Details";
-}
+<div class="container">
+    <div class="page-header"><div><p class="eyebrow">My orders</p><h1 class="h2">Order #@Model.Id</h1><p>Placed @Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</p></div><a class="btn btn-secondary" asp-action="MyOrders">Back to orders</a></div>
+    @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
+    @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div> }
 
-<div class="container mt-4">
+    <div class="panel mb-3"><div class="panel-body"><partial name="_OrderProgress" model="Model.Status" /></div></div>
+    <div class="order-detail-grid">
+        <div class="panel"><div class="panel-header"><h2>Purchase details</h2><partial name="_OrderStatus" model="Model.Status" /></div><div class="panel-body">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                @if (!string.IsNullOrWhiteSpace(Model.Product?.ImageUrl)) { <img class="table-thumbnail" src="@Model.Product.ImageUrl" alt="" /> } else { <span class="table-thumbnail product-image-placeholder">A</span> }
+                <div><h3 class="h6 mb-1">@Model.Product?.Name</h3><span class="product-meta">Sold by @Model.Product?.Farmer?.Name</span></div>
+            </div>
+            <dl class="detail-list"><dt>Quantity</dt><dd>@Model.Quantity unit(s)</dd><dt>Total paid</dt><dd>Rs. @Model.TotalPrice.ToString("N2")</dd><dt>Order date</dt><dd>@Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</dd></dl>
+        </div></div>
 
-    <h2>Order Details</h2>
-
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">
-            @TempData["SuccessMessage"]
-        </div>
-    }
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger">
-            @TempData["ErrorMessage"]
-        </div>
-    }
-
-    <hr />
-
-    <div class="card">
-
-        <div class="card-body">
-
-            <p>
-                <strong>Order ID:</strong>
-                @Model.Id
-            </p>
-            @if (!string.IsNullOrEmpty(Model.Product?.ImageUrl))
-            {
-                <div class="mb-3">
-
-                    <img src="@Model.Product.ImageUrl"
-                         alt="@Model.Product.Name"
-                         width="180"
-                         height="180"
-                         style="object-fit: cover;"
-                         class="rounded border" />
-
-                </div>
-            }
-
-            <p>
-                <strong>Product:</strong>
-                @Model.Product?.Name
-            </p>
-
-            <p>
-                <strong>Farmer:</strong>
-                @Model.Product?.Farmer?.Name
-            </p>
-
-            <p>
-                <strong>Quantity:</strong>
-                @Model.Quantity
-            </p>
-
-            <p>
-                <strong>Total Price:</strong>
-                Rs. @Model.TotalPrice.ToString("N2")
-            </p>
-
-            <p>
-                <strong>Order Date:</strong>
-                @(Model.OrderDate.ToString("dd MMM yyyy hh:mm tt"))
-            </p>
-
-            <p>
-                <strong>Status:</strong>
-
-                @if (Model.Status == "Pending")
-                {
-                    <span class="badge bg-warning text-dark">
-                        Pending
-                    </span>
-                }
-                else if (Model.Status == "Confirmed")
-                {
-                    <span class="badge bg-primary">
-                        Confirmed
-                    </span>
-                }
-                else if (Model.Status == "Completed")
-                {
-                    <span class="badge bg-success">
-                        Completed
-                    </span>
-                }
-                else if (Model.Status == "Cancelled")
-                {
-                    <span class="badge bg-danger">
-                        Cancelled
-                    </span>
-                }
-                @if (Model.Status == "Completed")
-                {
-                    if (ViewBag.HasReviewed == true)
-                    {
-                        <span class="badge bg-success p-2">
-                            Reviewed
-                        </span>
-                    }
-                    else
-                    {
-                        <a asp-controller="Reviews"
-                           asp-action="Create"
-                           asp-route-productId="@Model.ProductId"
-                           class="btn btn-warning">
-
-                            Write Review
-
-                        </a>
-                    }
-                }
-
-            </p>
-
-            <hr />
-
+        <aside class="panel align-self-start"><div class="panel-header"><h2>Order actions</h2></div><div class="panel-body d-grid gap-2">
             @if (Model.Status == "Pending")
             {
-                <form asp-controller="Orders"
-                      asp-action="ConsumerCancelOrder"
-                      method="post"
-                      class="d-inline">
-
-                    @Html.AntiForgeryToken()
-
-                    <input type="hidden"
-                           name="id"
-                           value="@Model.Id" />
-
-                    <button type="submit"
-                            class="btn btn-danger">
-
-                        Cancel Order
-
-                    </button>
-
-                </form>
+                <p class="small text-muted">You can cancel while the order is still awaiting farmer confirmation.</p>
+                <form asp-action="ConsumerCancelOrder" method="post" data-confirm="Cancel this order and return its quantity to stock?"><input type="hidden" name="id" value="@Model.Id" /><button type="submit" class="btn btn-danger w-100">Cancel order</button></form>
             }
-            @if (Model.Product?.Farmer != null)
+            @if (Model.Status == "Completed")
             {
-                <a asp-controller="Messages"
-                   asp-action="Send"
-                   asp-route-receiverId="@Model.Product.Farmer.Id"
-                   asp-route-productId="@Model.ProductId"
-                   class="btn btn-outline-primary">
-
-                    Message Farmer
-
-                </a>
+                @if (ViewBag.HasReviewed == true) { <p class="small text-muted">You have reviewed this product.</p> }
+                else { <a class="btn btn-primary" asp-controller="Reviews" asp-action="Create" asp-route-productId="@Model.ProductId">Write a review</a> }
             }
-
-            <a asp-controller="Orders"
-               asp-action="MyOrders"
-               class="btn btn-secondary">
-
-                Back to My Orders
-
-            </a>
-
-        </div>
-
+            @if (Model.Product?.Farmer != null) { <a class="btn btn-outline-primary" asp-controller="Messages" asp-action="Send" asp-route-receiverId="@Model.Product.Farmer.Id" asp-route-productId="@Model.ProductId">Message farmer</a> }
+        </div></aside>
     </div>
-
 </div>

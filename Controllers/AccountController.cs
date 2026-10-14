@@ -3,7 +3,6 @@ using DigitalAgriculturalMarketplace.ViewModels;
 using DigitalAgriculturalMarketPlace.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Metadata.Ecma335;
 using DigitalAgriculturalMarketplace.Constants;
 
 namespace DigitalAgriculturalMarketplace.Controllers
@@ -116,7 +115,10 @@ namespace DigitalAgriculturalMarketplace.Controllers
                 string? userType =
                     HttpContext.Session.GetString("UserType");
 
-                if (userType == "Farmer")
+                if (string.Equals(
+    userType,
+    UserRoles.Consumer,
+    StringComparison.OrdinalIgnoreCase))
                 {
                     return RedirectToAction(
                         "FarmerDashboard",
@@ -124,14 +126,20 @@ namespace DigitalAgriculturalMarketplace.Controllers
                     );
                 }
 
-                if (userType == "Consumer")
+                if (string.Equals(
+    userType,
+    UserRoles.Farmer,
+    StringComparison.OrdinalIgnoreCase))
                 {
                     return RedirectToAction(
                         "ConsumerDashboard",
                         "Home"
                     );
                 }
-                if (userType == "Admin")
+                if (string.Equals(
+    userType,
+    UserRoles.Admin,
+    StringComparison.OrdinalIgnoreCase))
                 {
                     return RedirectToAction(
                         "Dashboard",
@@ -192,7 +200,7 @@ namespace DigitalAgriculturalMarketplace.Controllers
 
                 return View(model);
             }
-
+            HttpContext.Session.Clear();
             HttpContext.Session.SetInt32("UserId", user.Id);
             HttpContext.Session.SetString("UserName", user.Name);
             HttpContext.Session.SetString("UserType", user.UserType);
@@ -217,7 +225,8 @@ namespace DigitalAgriculturalMarketplace.Controllers
 
             return RedirectToAction("Index", "Home");
         }
-        [HttpGet]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();

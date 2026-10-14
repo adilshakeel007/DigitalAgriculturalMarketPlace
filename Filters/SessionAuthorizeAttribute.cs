@@ -7,7 +7,8 @@ namespace DigitalAgriculturalMarketplace.Filters
     {
         private readonly string? _requiredRole;
 
-        public SessionAuthorizeAttribute(string? requiredRole = null)
+        public SessionAuthorizeAttribute(
+            string? requiredRole = null)
         {
             _requiredRole = requiredRole;
         }
@@ -16,32 +17,37 @@ namespace DigitalAgriculturalMarketplace.Filters
             ActionExecutingContext context)
         {
             int? userId =
-                context.HttpContext.Session.GetInt32("UserId");
+                context.HttpContext.Session
+                    .GetInt32("UserId");
 
             string? userType =
-                context.HttpContext.Session.GetString("UserType");
+                context.HttpContext.Session
+                    .GetString("UserType");
 
-            // User is not logged in
             if (userId == null)
             {
-                context.Result = new RedirectToActionResult(
-                    "Login",
-                    "Account",
-                    null
-                );
+                context.Result =
+                    new RedirectToActionResult(
+                        "Login",
+                        "Account",
+                        null
+                    );
 
                 return;
             }
 
-            // User is logged in but has wrong role
             if (!string.IsNullOrEmpty(_requiredRole) &&
-                userType != _requiredRole)
+                !string.Equals(
+                    userType,
+                    _requiredRole,
+                    StringComparison.OrdinalIgnoreCase))
             {
-                context.Result = new RedirectToActionResult(
-                    "AccessDenied",
-                    "Account",
-                    null
-                );
+                context.Result =
+                    new RedirectToActionResult(
+                        "AccessDenied",
+                        "Account",
+                        null
+                    );
 
                 return;
             }

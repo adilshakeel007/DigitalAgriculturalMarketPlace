@@ -113,12 +113,44 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             return View(model);
         }
         [HttpGet]
-        public async Task<IActionResult> Users()
+        public async Task<IActionResult> Users(
+            string? searchTerm,
+            string? userType,
+            string? status)
         {
-            var users = await _context.Users
+            IQueryable<User> usersQuery = _context.Users
                 .Where(u =>
                     u.UserType != UserRoles.Admin
-                )
+                );
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                searchTerm = searchTerm.Trim();
+                usersQuery = usersQuery.Where(u =>
+                    u.Name.Contains(searchTerm) ||
+                    u.Email.Contains(searchTerm) ||
+                    u.Phone.Contains(searchTerm));
+            }
+
+            if (userType == UserRoles.Farmer || userType == UserRoles.Consumer)
+            {
+                usersQuery = usersQuery.Where(u => u.UserType == userType);
+            }
+
+            if (status == "active")
+            {
+                usersQuery = usersQuery.Where(u => u.IsActive);
+            }
+            else if (status == "inactive")
+            {
+                usersQuery = usersQuery.Where(u => !u.IsActive);
+            }
+
+            ViewBag.SearchTerm = searchTerm;
+            ViewBag.UserType = userType;
+            ViewBag.Status = status;
+
+            var users = await usersQuery
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
 
@@ -153,10 +185,41 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             return RedirectToAction("Users");
         }
         [HttpGet]
-        public async Task<IActionResult> Products()
+        public async Task<IActionResult> Products(
+            string? searchTerm,
+            string? category,
+            string? status)
         {
-            var products = await _context.Products
-                .Include(p => p.Farmer)
+            IQueryable<Product> productsQuery = _context.Products
+                .Include(p => p.Farmer);
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                searchTerm = searchTerm.Trim();
+                productsQuery = productsQuery.Where(p =>
+                    p.Name.Contains(searchTerm) ||
+                    (p.Farmer != null && p.Farmer.Name.Contains(searchTerm)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                productsQuery = productsQuery.Where(p => p.Category == category);
+            }
+
+            if (status == "active")
+            {
+                productsQuery = productsQuery.Where(p => p.IsActive);
+            }
+            else if (status == "inactive")
+            {
+                productsQuery = productsQuery.Where(p => !p.IsActive);
+            }
+
+            ViewBag.SearchTerm = searchTerm;
+            ViewBag.Category = category;
+            ViewBag.Status = status;
+
+            var products = await productsQuery
                 .OrderByDescending(p => p.ListedAt)
                 .ToListAsync();
 
@@ -191,12 +254,33 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             return RedirectToAction("Products");
         }
         [HttpGet]
-        public async Task<IActionResult> Orders()
+        public async Task<IActionResult> Orders(
+            string? searchTerm,
+            string? status)
         {
-            var orders = await _context.Orders
+            IQueryable<Order> ordersQuery = _context.Orders
                 .Include(o => o.Product)
                     .ThenInclude(p => p!.Farmer)
-                .Include(o => o.Consumer)
+                .Include(o => o.Consumer);
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                searchTerm = searchTerm.Trim();
+                ordersQuery = ordersQuery.Where(o =>
+                    o.Product != null && o.Product.Name.Contains(searchTerm) ||
+                    o.Consumer != null && o.Consumer.Name.Contains(searchTerm));
+            }
+
+            string[] allowedStatuses = { "Pending", "Confirmed", "Completed", "Cancelled" };
+            if (!string.IsNullOrWhiteSpace(status) && allowedStatuses.Contains(status))
+            {
+                ordersQuery = ordersQuery.Where(o => o.Status == status);
+            }
+
+            ViewBag.SearchTerm = searchTerm;
+            ViewBag.Status = status;
+
+            var orders = await ordersQuery
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
@@ -391,7 +475,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
         }
         public IActionResult Index()
         {
-            return View();
+            return RedirectToAction(nameof(Dashboard));
         }
     }
 }

@@ -19,5 +19,11 @@ namespace DigitalAgriculturalMarketplace.ViewModels
 
         public List<Order> RecentOrders { get; set; }
             = new List<Order>();
+
+        public List<Order> ActiveOrders { get; set; }
+            = new List<Order>();
+
+        public List<Order> OrderHistory { get; set; }
+            = new List<Order>();
     }
 }

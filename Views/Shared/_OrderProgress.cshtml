@@ -1,0 +1,22 @@
+@model string
+@{
+    int currentStep = Model switch
+    {
+        "Pending" => 1,
+        "Confirmed" => 2,
+        "Completed" => 3,
+        _ => 0
+    };
+}
+@if (Model == "Cancelled")
+{
+    <div class="order-cancelled-state"><span class="status-dot" aria-hidden="true"></span>This order was cancelled</div>
+}
+else
+{
+    <ol class="order-progress" aria-label="Order progress">
+        <li class="@(currentStep >= 1 ? "complete" : string.Empty)"><span>1</span><strong>Pending</strong><small>Order placed</small></li>
+        <li class="@(currentStep >= 2 ? "complete" : string.Empty)"><span>2</span><strong>Confirmed</strong><small>Accepted by farmer</small></li>
+        <li class="@(currentStep >= 3 ? "complete" : string.Empty)"><span>3</span><strong>Completed</strong><small>Order fulfilled</small></li>
+    </ol>
+}

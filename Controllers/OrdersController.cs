@@ -5,6 +5,7 @@ using DigitalAgriculturalMarketplace.Models;
 using DigitalAgriculturalMarketplace.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace DigitalAgriculturalMarketPlace.Controllers
 {
@@ -62,6 +63,11 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     "Account"
                 );
             }
+
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable
+                );
 
             Product? product =
                 await _context.Products
@@ -151,6 +157,8 @@ namespace DigitalAgriculturalMarketPlace.Controllers
     order.Id
 );
 
+            await transaction.CommitAsync();
+
             TempData["SuccessMessage"] =
                 "Your order has been placed successfully.";
 
@@ -183,7 +191,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
         }
         [SessionAuthorize(UserRoles.Farmer)]
         [HttpGet]
-        public async Task<IActionResult> FarmerOrders()
+        public async Task<IActionResult> FarmerOrders(string? status)
         {
             int? farmerId =
                 HttpContext.Session.GetInt32("UserId");
@@ -196,13 +204,23 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 );
             }
 
-            var orders = await _context.Orders
+            IQueryable<Order> ordersQuery = _context.Orders
                 .Include(o => o.Product)
                 .Include(o => o.Consumer)
                 .Where(o =>
                     o.Product != null &&
                     o.Product.FarmerId == farmerId.Value
-                )
+                );
+
+            string[] allowedStatuses = { "Pending", "Confirmed", "Completed", "Cancelled" };
+            if (!string.IsNullOrWhiteSpace(status) && allowedStatuses.Contains(status))
+            {
+                ordersQuery = ordersQuery.Where(o => o.Status == status);
+            }
+
+            ViewBag.Status = status;
+
+            var orders = await ordersQuery
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
@@ -256,6 +274,11 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     "Account"
                 );
             }
+
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable
+                );
 
             Order? order = await _context.Orders
                 .Include(o => o.Product)
@@ -363,6 +386,8 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 );
             }
 
+            await transaction.CommitAsync();
+
 
             TempData["SuccessMessage"] =
                 "Order status updated successfully.";
@@ -374,7 +399,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
         }
         [SessionAuthorize(UserRoles.Consumer)]
         [HttpGet]
-        public async Task<IActionResult> MyOrders()
+        public async Task<IActionResult> MyOrders(string? status)
         {
             int? consumerId =
                 HttpContext.Session.GetInt32("UserId");
@@ -387,11 +412,21 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 );
             }
 
-            var orders = await _context.Orders
+            IQueryable<Order> ordersQuery = _context.Orders
                 .Include(o => o.Product)
                 .Where(o =>
                     o.ConsumerId == consumerId.Value
-                )
+                );
+
+            string[] allowedStatuses = { "Pending", "Confirmed", "Completed", "Cancelled" };
+            if (!string.IsNullOrWhiteSpace(status) && allowedStatuses.Contains(status))
+            {
+                ordersQuery = ordersQuery.Where(o => o.Status == status);
+            }
+
+            ViewBag.Status = status;
+
+            var orders = await ordersQuery
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
@@ -452,6 +487,11 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 );
             }
 
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable
+                );
+
             Order? order = await _context.Orders
                 .Include(o => o.Product)
                 .FirstOrDefaultAsync(o =>
@@ -474,10 +514,13 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     new { id = order.Id }
                 );
             }
-
             if (order.Product != null)
             {
                 order.Product.Quantity += order.Quantity;
+            }
+            else
+            {
+                return NotFound();
             }
 
             order.Status = "Cancelled";
@@ -493,6 +536,8 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     order.Id
                 );
             }
+
+            await transaction.CommitAsync();
 
             TempData["SuccessMessage"] =
                 "Order cancelled successfully.";

@@ -72,29 +72,19 @@ namespace DigitalAgriculturalMarketplace.Controllers
                         model.ImageFile.FileName
                     ).ToLower();
 
-                if (!allowedExtensions.Contains(extension))
+                string[] allowedContentTypes =
+                {
+                    "image/jpeg",
+                    "image/png"
+                };
+
+                if (!allowedExtensions.Contains(extension) ||
+                    !allowedContentTypes.Contains(model.ImageFile.ContentType))
                 {
                     ModelState.AddModelError(
                         "ImageFile",
-                        "Only JPG, JPEG and PNG images are allowed."
+                        "Please upload a valid JPG or PNG image."
                     );
-                    string[] allowedContentTypes =
-                    {
-                        "image/jpeg",
-                        "image/png"
-                    };
-
-                    if (!allowedContentTypes.Contains(
-                        model.ImageFile.ContentType))
-                    {
-                        ModelState.AddModelError(
-                            "ImageFile",
-                            "The uploaded file is not a valid image."
-                        );
-
-                        return View(model);
-                    }
-
                     return View(model);
                 }
 
@@ -263,6 +253,23 @@ namespace DigitalAgriculturalMarketplace.Controllers
                     return View(model);
                 }
 
+                string[] allowedContentTypes =
+                {
+                    "image/jpeg",
+                    "image/png"
+                };
+
+                if (!allowedContentTypes.Contains(model.NewImageFile.ContentType))
+                {
+                    ModelState.AddModelError(
+                        "NewImageFile",
+                        "Please upload a valid JPG or PNG image."
+                    );
+
+                    model.CurrentImageUrl = product.ImageUrl;
+                    return View(model);
+                }
+
                 long maxFileSize =
                     5 * 1024 * 1024;
 
@@ -314,6 +321,8 @@ namespace DigitalAgriculturalMarketplace.Controllers
                         "products"
                     );
 
+                Directory.CreateDirectory(uploadFolder);
+
                 string filePath =
                     Path.Combine(
                         uploadFolder,
@@ -347,11 +356,16 @@ namespace DigitalAgriculturalMarketplace.Controllers
             int? farmerId =
                 HttpContext.Session.GetInt32("UserId");
 
+            if (farmerId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             Product? product =
                 await _context.Products
                     .FirstOrDefaultAsync(p =>
                         p.Id == id &&
-                        p.FarmerId == farmerId
+                        p.FarmerId == farmerId.Value
                     );
 
             if (product == null)
@@ -396,22 +410,50 @@ namespace DigitalAgriculturalMarketplace.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(
+      int id)
         {
             int? farmerId =
                 HttpContext.Session.GetInt32("UserId");
+
+            if (farmerId == null)
+            {
+                return RedirectToAction(
+                    "Login",
+                    "Account"
+                );
+            }
 
             Product? product =
                 await _context.Products
                     .FirstOrDefaultAsync(p =>
                         p.Id == id &&
-                        p.FarmerId == farmerId
+                        p.FarmerId == farmerId.Value
                     );
 
             if (product == null)
             {
                 return NotFound();
             }
+
+            bool hasOrders =
+                await _context.Orders
+                    .AnyAsync(o =>
+                        o.ProductId == product.Id
+                    );
+
+            if (hasOrders)
+            {
+                product.IsActive = false;
+
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] =
+                    "Product has order history and was deactivated instead of deleted.";
+
+                return RedirectToAction("Index");
+            }
+
             if (!string.IsNullOrEmpty(product.ImageUrl))
             {
                 string imagePath =
@@ -430,6 +472,7 @@ namespace DigitalAgriculturalMarketplace.Controllers
                     System.IO.File.Delete(imagePath);
                 }
             }
+
             _context.Products.Remove(product);
 
             await _context.SaveChangesAsync();

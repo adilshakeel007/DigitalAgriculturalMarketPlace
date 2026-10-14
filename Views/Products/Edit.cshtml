@@ -1,221 +1,41 @@
-﻿@model DigitalAgriculturalMarketplace.ViewModels.ProductEditViewModel
-
-@{
-    ViewData["Title"] = "Edit Product";
-}
-
-<div class="container mt-4">
-
-    <div class="row justify-content-center">
-
-        <div class="col-12 col-md-8 col-lg-7">
-
-            <div class="card shadow">
-
-                <div class="card-body">
-
-                    <h2 class="mb-4">
-                        Edit Product
-                    </h2>
-
-                    <form asp-action="Edit"
-                          method="post"
-                          enctype="multipart/form-data">
-
-                        <input type="hidden"
-                               asp-for="Id" />
-                        @if (!string.IsNullOrEmpty(Model.CurrentImageUrl))
-                        {
-                            <div class="mb-3">
-
-                                <label class="form-label">
-                                    Current Image
-                                </label>
-                                <div class="mb-3">
-
-                                    <label asp-for="NewImageFile"
-                                           class="form-label">
-                                        Replace Image
-                                    </label>
-
-                                    <input asp-for="NewImageFile"
-                                           type="file"
-                                           class="form-control"
-                                           accept=".jpg,.jpeg,.png" />
-
-                                    <span asp-validation-for="NewImageFile"
-                                          class="text-danger">
-                                    </span>
-
-                                    <small class="text-muted">
-                                        Leave empty to keep the current image.
-                                    </small>
-
-                                </div>
-
-                                <br />
-
-                                <img src="@Model.CurrentImageUrl"
-                                     alt="@Model.Name"
-                                     width="150"
-                                     height="150"
-                                     style="object-fit: cover;" />
-
-                            </div>
-                        }
-
-
-                        <div asp-validation-summary="ModelOnly"
-                             class="text-danger">
-                        </div>
-
-
-                        <div class="mb-3">
-
-                            <label asp-for="Name"
-                                   class="form-label">
-                                Product Name
-                            </label>
-
-                            <input asp-for="Name"
-                                   class="form-control" />
-
-                            <span asp-validation-for="Name"
-                                  class="text-danger">
-                            </span>
-
-                        </div>
-
-
-                        <div class="mb-3">
-
-                            <label asp-for="Category"
-                                   class="form-label">
-                                Category
-                            </label>
-
-                            <select asp-for="Category"
-                                    class="form-select">
-
-                                <option value="Vegetables">
-                                    Vegetables
-                                </option>
-
-                                <option value="Fruits">
-                                    Fruits
-                                </option>
-
-                                <option value="Grains">
-                                    Grains
-                                </option>
-
-                                <option value="Dairy">
-                                    Dairy
-                                </option>
-
-                                <option value="Other">
-                                    Other
-                                </option>
-
-                            </select>
-
-                        </div>
-
-
-                        <div class="mb-3">
-
-                            <label asp-for="PricePerUnit"
-                                   class="form-label">
-                                Price Per Unit
-                            </label>
-
-                            <input asp-for="PricePerUnit"
-                                   class="form-control" />
-
-                            <span asp-validation-for="PricePerUnit"
-                                  class="text-danger">
-                            </span>
-
-                        </div>
-
-
-                        <div class="mb-3">
-
-                            <label asp-for="Quantity"
-                                   class="form-label">
-                                Available Quantity
-                            </label>
-
-                            <input asp-for="Quantity"
-                                   class="form-control" />
-
-                            <span asp-validation-for="Quantity"
-                                  class="text-danger">
-                            </span>
-
-                        </div>
-
-
-                        <div class="mb-3">
-
-                            <label asp-for="Description"
-                                   class="form-label">
-                                Description
-                            </label>
-
-                            <textarea asp-for="Description"
-                                      class="form-control"
-                                      rows="4">
-                            </textarea>
-
-                        </div>
-
-
-                        <div class="form-check mb-3">
-
-                            <input asp-for="IsActive"
-                                   class="form-check-input" />
-
-                            <label asp-for="IsActive"
-                                   class="form-check-label">
-
-                                Active Product
-
-                            </label>
-
-                        </div>
-
-
-                        <button type="submit"
-                                class="btn btn-warning">
-
-                            Update Product
-
-                        </button>
-
-
-                        <a asp-action="Index"
-                           class="btn btn-secondary">
-
-                            Cancel
-
-                        </a>
-
-                    </form>
-
-                </div>
-
+@model DigitalAgriculturalMarketplace.ViewModels.ProductEditViewModel
+@{ ViewData["Title"] = "Edit product"; }
+
+<div class="management-shell">
+    <partial name="_FarmerSidebar" />
+    <div class="management-content">
+        <div class="management-header"><div><h1>Edit product</h1><p>Update @Model.Name without changing its order history.</p></div><a asp-action="Index" class="btn btn-secondary btn-sm">Back to products</a></div>
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            <input type="hidden" asp-for="Id" /><input type="hidden" asp-for="CurrentImageUrl" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+            <div class="order-detail-grid">
+                <div class="panel"><div class="panel-body">
+                    <section class="form-section"><h2 class="form-section-title">Product information</h2><div class="row g-3">
+                        <div class="col-md-7"><label asp-for="Name" class="form-label">Product name</label><input asp-for="Name" class="form-control" /><span asp-validation-for="Name" class="text-danger small"></span></div>
+                        <div class="col-md-5"><label asp-for="Category" class="form-label"></label><select asp-for="Category" class="form-select"><option>Vegetables</option><option>Fruits</option><option>Grains</option><option>Dairy</option><option>Other</option></select><span asp-validation-for="Category" class="text-danger small"></span></div>
+                        <div class="col-12"><label asp-for="Description" class="form-label"></label><textarea asp-for="Description" class="form-control" rows="5"></textarea><span asp-validation-for="Description" class="text-danger small"></span></div>
+                    </div></section>
+                    <section class="form-section"><h2 class="form-section-title">Pricing and inventory</h2><div class="row g-3">
+                        <div class="col-md-6"><label asp-for="PricePerUnit" class="form-label">Price per unit (Rs.)</label><input asp-for="PricePerUnit" class="form-control" min="0.01" step="0.01" /><span asp-validation-for="PricePerUnit" class="text-danger small"></span></div>
+                        <div class="col-md-6"><label asp-for="Quantity" class="form-label">Available quantity</label><input asp-for="Quantity" class="form-control" min="0" step="1" /><span asp-validation-for="Quantity" class="text-danger small"></span></div>
+                        <div class="col-12"><div class="form-check"><input asp-for="IsActive" class="form-check-input" /><label asp-for="IsActive" class="form-check-label">Visible in the marketplace</label></div><div class="form-text">Hidden products remain in order history but cannot receive new orders.</div></div>
+                    </div></section>
+                    <div class="d-flex flex-wrap gap-2 mt-4"><button type="submit" class="btn btn-primary">Save changes</button><a asp-action="Index" class="btn btn-secondary">Cancel</a></div>
+                </div></div>
+
+                <aside class="panel"><div class="panel-body">
+                    <h2 class="form-section-title">Product image</h2>
+                    <div class="image-upload-preview mb-3" data-image-preview>
+                        @if (!string.IsNullOrEmpty(Model.CurrentImageUrl)) { <img src="@Model.CurrentImageUrl" alt="Current image for @Model.Name" /> }
+                        else { <div class="image-upload-placeholder"><span class="fallback-mark mx-auto mb-2">A</span><span>No image uploaded</span></div> }
+                    </div>
+                    <label asp-for="NewImageFile" class="form-label">@(string.IsNullOrEmpty(Model.CurrentImageUrl) ? "Add image" : "Replace image")</label>
+                    <input asp-for="NewImageFile" type="file" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png" data-image-input data-preview-target="[data-image-preview]" />
+                    <span asp-validation-for="NewImageFile" class="text-danger small"></span><div class="form-text">JPG or PNG, up to 5 MB. Leave empty to keep the current image.</div>
+                </div></aside>
             </div>
-
-        </div>
-
+        </form>
     </div>
-
 </div>
 
-@section Scripts
-{
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-}
+@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }

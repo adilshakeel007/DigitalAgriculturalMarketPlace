@@ -8,6 +8,10 @@ namespace DigitalAgriculturalMarketplace.ViewModels
 
         public int ActiveProducts { get; set; }
 
+        public int LowStockProducts { get; set; }
+
+        public int TotalStockUnits { get; set; }
+
         public int PendingOrders { get; set; }
 
         public int ConfirmedOrders { get; set; }
@@ -21,5 +25,8 @@ namespace DigitalAgriculturalMarketplace.ViewModels
 
         public List<Order> RecentOrders { get; set; }
             = new List<Order>();
+
+        public List<Product> InventoryOverview { get; set; }
+            = new List<Product>();
     }
 }

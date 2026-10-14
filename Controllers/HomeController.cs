@@ -49,6 +49,23 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                         p.IsActive
                     );
 
+            int lowStockProducts =
+                await _context.Products
+                    .CountAsync(p =>
+                        p.FarmerId == farmerId.Value &&
+                        p.IsActive &&
+                        p.Quantity <= 5
+                    );
+
+            int totalStockUnits =
+                await _context.Products
+                    .Where(p =>
+                        p.FarmerId == farmerId.Value &&
+                        p.IsActive
+                    )
+                    .SumAsync(p => (int?)p.Quantity)
+                ?? 0;
+
             int pendingOrders =
                 await _context.Orders
                     .CountAsync(o =>
@@ -108,18 +125,29 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     .Take(5)
                     .ToListAsync();
 
+            var inventoryOverview =
+                await _context.Products
+                    .Where(p => p.FarmerId == farmerId.Value)
+                    .OrderBy(p => p.Quantity)
+                    .ThenBy(p => p.Name)
+                    .Take(6)
+                    .ToListAsync();
+
             FarmerDashboardViewModel model =
                 new FarmerDashboardViewModel
                 {
                     TotalProducts = totalProducts,
                     ActiveProducts = activeProducts,
+                    LowStockProducts = lowStockProducts,
+                    TotalStockUnits = totalStockUnits,
                     PendingOrders = pendingOrders,
                     ConfirmedOrders = confirmedOrders,
                     CompletedOrders = completedOrders,
                     TotalRevenue = totalRevenue,
                     UnreadMessages = unreadMessages,
                     UnreadNotifications = unreadNotifications,
-                    RecentOrders = recentOrders
+                    RecentOrders = recentOrders,
+                    InventoryOverview = inventoryOverview
                 };
 
             return View(model);
@@ -196,6 +224,29 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     .Take(5)
                     .ToListAsync();
 
+            var activeOrders =
+                await _context.Orders
+                    .Include(o => o.Product)
+                    .ThenInclude(p => p!.Farmer)
+                    .Where(o =>
+                        o.ConsumerId == consumerId.Value &&
+                        (o.Status == "Pending" || o.Status == "Confirmed")
+                    )
+                    .OrderByDescending(o => o.OrderDate)
+                    .ToListAsync();
+
+            var orderHistory =
+                await _context.Orders
+                    .Include(o => o.Product)
+                    .ThenInclude(p => p!.Farmer)
+                    .Where(o =>
+                        o.ConsumerId == consumerId.Value &&
+                        (o.Status == "Completed" || o.Status == "Cancelled")
+                    )
+                    .OrderByDescending(o => o.OrderDate)
+                    .Take(5)
+                    .ToListAsync();
+
             ConsumerDashboardViewModel model =
                 new ConsumerDashboardViewModel
                 {
@@ -206,7 +257,9 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     CancelledOrders = cancelledOrders,
                     UnreadMessages = unreadMessages,
                     UnreadNotifications = unreadNotifications,
-                    RecentOrders = recentOrders
+                    RecentOrders = recentOrders,
+                    ActiveOrders = activeOrders,
+                    OrderHistory = orderHistory
                 };
 
             return View(model);
@@ -214,10 +267,27 @@ namespace DigitalAgriculturalMarketPlace.Controllers
         [SessionAuthorize]
         public IActionResult Profile()
         {
-            return View();
+            return RedirectToAction(nameof(Index));
         }
         public IActionResult Index()
         {
+            string? userType = HttpContext.Session.GetString("UserType");
+
+            if (userType == UserRoles.Farmer)
+            {
+                return RedirectToAction(nameof(FarmerDashboard));
+            }
+
+            if (userType == UserRoles.Consumer)
+            {
+                return RedirectToAction(nameof(ConsumerDashboard));
+            }
+
+            if (userType == UserRoles.Admin)
+            {
+                return RedirectToAction("Dashboard", "Admin");
+            }
+
             return View();
         }
 

@@ -1,0 +1,23 @@
+@{
+    string controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    string action = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    string Active(string targetController, string? targetAction = null) =>
+        controller.Equals(targetController, StringComparison.OrdinalIgnoreCase) &&
+        (targetAction == null || action.Equals(targetAction, StringComparison.OrdinalIgnoreCase))
+            ? "active"
+            : string.Empty;
+}
+
+<aside class="management-sidebar" aria-label="Farmer workspace navigation">
+    <div class="management-sidebar-heading">
+        <span class="management-sidebar-label">Farmer workspace</span>
+        <strong>@Context.Session.GetString("UserName")</strong>
+    </div>
+    <nav class="management-nav">
+        <a class="@Active("Home", "FarmerDashboard")" asp-controller="Home" asp-action="FarmerDashboard"><span>Overview</span></a>
+        <a class="@Active("Products")" asp-controller="Products" asp-action="Index"><span>Products</span></a>
+        <a class="@Active("Orders")" asp-controller="Orders" asp-action="FarmerOrders"><span>Orders</span></a>
+        <a class="@Active("Messages")" asp-controller="Messages" asp-action="Inbox"><span>Messages</span></a>
+        <a class="@Active("Notifications")" asp-controller="Notifications" asp-action="Index"><span>Notifications</span></a>
+    </nav>
+</aside>

@@ -1,0 +1,12 @@
+@model string
+@{
+    string cssClass = Model switch
+    {
+        "Pending" => "status-pending",
+        "Confirmed" => "status-confirmed",
+        "Completed" => "status-completed",
+        "Cancelled" => "status-cancelled",
+        _ => "status-neutral"
+    };
+}
+<span class="status-pill @cssClass"><span class="status-dot" aria-hidden="true"></span>@Model</span>
