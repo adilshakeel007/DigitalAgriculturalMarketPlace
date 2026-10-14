@@ -19,4 +19,10 @@
     <Folder Include="wwwroot\images\products\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="DigitalAgriculturalMarketPlace.Tests\**\*.cs" />
+    <Content Remove="DigitalAgriculturalMarketPlace.Tests\**\*" />
+    <None Remove="DigitalAgriculturalMarketPlace.Tests\**\*" />
+  </ItemGroup>
+
 </Project>

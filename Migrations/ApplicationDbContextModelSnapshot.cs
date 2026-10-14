@@ -22,6 +22,55 @@ namespace DigitalAgriculturalMarketPlace.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.CatalogProduct", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DefaultUnitId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DefaultUnitId");
+
+                    b.HasIndex("Category", "Name");
+
+                    b.ToTable("CatalogProducts");
+                });
+
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Message", b =>
                 {
                     b.Property<int>("Id")
@@ -147,6 +196,12 @@ namespace DigitalAgriculturalMarketPlace.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("AvailableQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int?>("CatalogProductId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -169,6 +224,9 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                     b.Property<DateTime>("ListedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal?>("MinimumOrderQuantity")
+                        .HasColumnType("decimal(18,3)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -180,11 +238,39 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("ReservedQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int?>("UnitOfMeasureId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FarmerId");
 
-                    b.ToTable("Products");
+                    b.HasIndex("UnitOfMeasureId");
+
+                    b.HasIndex("CatalogProductId", "IsActive");
+
+                    b.HasIndex("FarmerId", "IsActive");
+
+                    b.ToTable("Products", t =>
+                        {
+                            t.HasCheckConstraint("CK_Products_AvailableQuantity_NonNegative", "[AvailableQuantity] IS NULL OR [AvailableQuantity] >= 0");
+
+                            t.HasCheckConstraint("CK_Products_MinimumOrderQuantity_Positive", "[MinimumOrderQuantity] IS NULL OR [MinimumOrderQuantity] > 0");
+
+                            t.HasCheckConstraint("CK_Products_ReservedQuantity_NonNegative", "[ReservedQuantity] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Review", b =>
@@ -221,6 +307,125 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                     b.ToTable("Reviews");
                 });
 
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.SellerProfile", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VerificationStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("SellerProfiles", t =>
+                        {
+                            t.HasCheckConstraint("CK_SellerProfiles_VerificationStatus", "[VerificationStatus] IN ('Unverified', 'Verified', 'Rejected')");
+                        });
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.UnitOfMeasure", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<byte>("DecimalPlaces")
+                        .HasColumnType("tinyint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("UnitsOfMeasure", t =>
+                        {
+                            t.HasCheckConstraint("CK_UnitsOfMeasure_DecimalPlaces", "[DecimalPlaces] BETWEEN 0 AND 3");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Code = "kg",
+                            DecimalPlaces = (byte)3,
+                            IsActive = true,
+                            Name = "Kilogram"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Code = "tonne",
+                            DecimalPlaces = (byte)3,
+                            IsActive = true,
+                            Name = "Tonne"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Code = "bag",
+                            DecimalPlaces = (byte)0,
+                            IsActive = true,
+                            Name = "Bag"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Code = "crate",
+                            DecimalPlaces = (byte)0,
+                            IsActive = true,
+                            Name = "Crate"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Code = "piece",
+                            DecimalPlaces = (byte)0,
+                            IsActive = true,
+                            Name = "Piece"
+                        });
+                });
+
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -240,6 +445,9 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -254,6 +462,15 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("UserType")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -265,6 +482,16 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.CatalogProduct", b =>
+                {
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.UnitOfMeasure", "DefaultUnit")
+                        .WithMany("CatalogProducts")
+                        .HasForeignKey("DefaultUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("DefaultUnit");
                 });
 
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Message", b =>
@@ -325,13 +552,27 @@ namespace DigitalAgriculturalMarketPlace.Migrations
 
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Product", b =>
                 {
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.CatalogProduct", "CatalogProduct")
+                        .WithMany("ProductListings")
+                        .HasForeignKey("CatalogProductId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("DigitalAgriculturalMarketplace.Models.User", "Farmer")
                         .WithMany("Products")
                         .HasForeignKey("FarmerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.UnitOfMeasure", "UnitOfMeasure")
+                        .WithMany("ProductListings")
+                        .HasForeignKey("UnitOfMeasureId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CatalogProduct");
+
                     b.Navigation("Farmer");
+
+                    b.Navigation("UnitOfMeasure");
                 });
 
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Review", b =>
@@ -353,6 +594,22 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.SellerProfile", b =>
+                {
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.User", "User")
+                        .WithOne("SellerProfile")
+                        .HasForeignKey("DigitalAgriculturalMarketplace.Models.SellerProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.CatalogProduct", b =>
+                {
+                    b.Navigation("ProductListings");
+                });
+
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Product", b =>
                 {
                     b.Navigation("Messages");
@@ -360,6 +617,13 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                     b.Navigation("Orders");
 
                     b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.UnitOfMeasure", b =>
+                {
+                    b.Navigation("CatalogProducts");
+
+                    b.Navigation("ProductListings");
                 });
 
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.User", b =>
@@ -373,6 +637,8 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                     b.Navigation("ReceivedMessages");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("SellerProfile");
 
                     b.Navigation("SentMessages");
                 });

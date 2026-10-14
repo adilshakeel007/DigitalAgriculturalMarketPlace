@@ -16,6 +16,9 @@ namespace DigitalAgriculturalMarketPlace.Data
         public DbSet<Review> Reviews { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<SellerProfile> SellerProfiles { get; set; }
+        public DbSet<UnitOfMeasure> UnitsOfMeasure { get; set; }
+        public DbSet<CatalogProduct> CatalogProducts { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         { 
             base.OnModelCreating(modelBuilder);
@@ -24,11 +27,98 @@ namespace DigitalAgriculturalMarketPlace.Data
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
+            modelBuilder.Entity<User>()
+                .Property(u => u.RowVersion)
+                .IsRowVersion();
+
+            modelBuilder.Entity<SellerProfile>()
+                .HasOne(s => s.User)
+                .WithOne(u => u.SellerProfile)
+                .HasForeignKey<SellerProfile>(s => s.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SellerProfile>()
+                .Property(s => s.RowVersion)
+                .IsRowVersion();
+
+            modelBuilder.Entity<SellerProfile>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_SellerProfiles_VerificationStatus",
+                    "[VerificationStatus] IN ('Unverified', 'Verified', 'Rejected')"));
+
+            modelBuilder.Entity<UnitOfMeasure>()
+                .HasIndex(u => u.Code)
+                .IsUnique();
+
+            modelBuilder.Entity<UnitOfMeasure>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_UnitsOfMeasure_DecimalPlaces",
+                    "[DecimalPlaces] BETWEEN 0 AND 3"));
+
+            modelBuilder.Entity<UnitOfMeasure>().HasData(
+                new UnitOfMeasure { Id = 1, Code = "kg", Name = "Kilogram", DecimalPlaces = 3, IsActive = true },
+                new UnitOfMeasure { Id = 2, Code = "tonne", Name = "Tonne", DecimalPlaces = 3, IsActive = true },
+                new UnitOfMeasure { Id = 3, Code = "bag", Name = "Bag", DecimalPlaces = 0, IsActive = true },
+                new UnitOfMeasure { Id = 4, Code = "crate", Name = "Crate", DecimalPlaces = 0, IsActive = true },
+                new UnitOfMeasure { Id = 5, Code = "piece", Name = "Piece", DecimalPlaces = 0, IsActive = true });
+
+            modelBuilder.Entity<CatalogProduct>()
+                .HasOne(c => c.DefaultUnit)
+                .WithMany(u => u.CatalogProducts)
+                .HasForeignKey(c => c.DefaultUnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CatalogProduct>()
+                .HasIndex(c => new { c.Category, c.Name });
+
+            modelBuilder.Entity<CatalogProduct>()
+                .Property(c => c.RowVersion)
+                .IsRowVersion();
+
             modelBuilder.Entity<Product>()
     .HasOne(p => p.Farmer)
     .WithMany(u => u.Products)
     .HasForeignKey(p => p.FarmerId)
     .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.CatalogProduct)
+                .WithMany(c => c.ProductListings)
+                .HasForeignKey(p => p.CatalogProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.UnitOfMeasure)
+                .WithMany(u => u.ProductListings)
+                .HasForeignKey(p => p.UnitOfMeasureId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.FarmerId);
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => new { p.FarmerId, p.IsActive });
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => new { p.CatalogProductId, p.IsActive });
+
+            modelBuilder.Entity<Product>()
+                .Property(p => p.RowVersion)
+                .IsRowVersion();
+
+            modelBuilder.Entity<Product>()
+                .ToTable(t =>
+                {
+                    t.HasCheckConstraint(
+                        "CK_Products_AvailableQuantity_NonNegative",
+                        "[AvailableQuantity] IS NULL OR [AvailableQuantity] >= 0");
+                    t.HasCheckConstraint(
+                        "CK_Products_ReservedQuantity_NonNegative",
+                        "[ReservedQuantity] >= 0");
+                    t.HasCheckConstraint(
+                        "CK_Products_MinimumOrderQuantity_Positive",
+                        "[MinimumOrderQuantity] IS NULL OR [MinimumOrderQuantity] > 0");
+                });
 
             modelBuilder.Entity<Order>()
     .HasOne(o => o.Consumer)

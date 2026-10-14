@@ -31,6 +31,15 @@ namespace DigitalAgriculturalMarketplace.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        public DateTime? UpdatedAt { get; set; }
+
+        public DateTime? LastLoginAt { get; set; }
+
+        [Timestamp]
+        public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
+        public SellerProfile? SellerProfile { get; set; }
+
         public ICollection<Product> Products { get; set; }
     = new List<Product>();
         public ICollection<Order> Orders { get; set; }
