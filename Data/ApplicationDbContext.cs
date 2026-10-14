@@ -72,8 +72,40 @@ namespace DigitalAgriculturalMarketPlace.Data
                 .HasIndex(c => new { c.Category, c.Name });
 
             modelBuilder.Entity<CatalogProduct>()
+                .HasIndex(c => new
+                {
+                    c.SubmittedByUserId,
+                    c.Name,
+                    c.Category,
+                    c.DefaultUnitId,
+                    c.Status
+                })
+                .IsUnique();
+
+            modelBuilder.Entity<CatalogProduct>()
+                .HasOne(c => c.SubmittedByUser)
+                .WithMany(u => u.SubmittedCatalogProducts)
+                .HasForeignKey(c => c.SubmittedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CatalogProduct>()
+                .HasOne(c => c.ReviewedByUser)
+                .WithMany(u => u.ReviewedCatalogProducts)
+                .HasForeignKey(c => c.ReviewedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CatalogProduct>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_CatalogProducts_Status",
+                    "[Status] IN ('Pending', 'Approved', 'Rejected')"));
+
+            modelBuilder.Entity<CatalogProduct>()
                 .Property(c => c.RowVersion)
                 .IsRowVersion();
+
+            modelBuilder.Entity<CatalogProduct>()
+                .Property(c => c.Status)
+                .HasDefaultValue("Pending");
 
             modelBuilder.Entity<Product>()
     .HasOne(p => p.Farmer)

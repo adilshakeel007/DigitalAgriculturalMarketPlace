@@ -18,15 +18,17 @@ namespace DigitalAgriculturalMarketPlace.Controllers
         {
             _context = context;
         }
-        [SessionAuthorize(UserRoles.Consumer)]
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
         [HttpGet]
         public async Task<IActionResult> PlaceOrder(int productId)
         {
+            int? buyerId = HttpContext.Session.GetInt32("UserId");
             Product? product = await _context.Products
                 .FirstOrDefaultAsync(p =>
                     p.Id == productId &&
                     p.IsActive &&
-                    p.Quantity > 0
+                    p.Quantity > 0 &&
+                    p.FarmerId != buyerId
                 );
 
             if (product == null)
@@ -47,7 +49,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             return View(model);
 
         }
-        [SessionAuthorize(UserRoles.Consumer)]
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> PlaceOrder(
@@ -78,6 +80,15 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             if (product == null)
             {
                 return NotFound();
+            }
+
+            if (product.FarmerId == consumerId.Value)
+            {
+                ModelState.AddModelError("", "You cannot purchase your own listing.");
+                model.ProductName = product.Name;
+                model.PricePerUnit = product.PricePerUnit;
+                model.AvailableQuantity = product.Quantity;
+                return View(model);
             }
 
             // Refill display-only values
@@ -167,7 +178,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 new { id = order.Id }
             );
         }
-        [SessionAuthorize(UserRoles.Consumer)]
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
         [HttpGet]
         public async Task<IActionResult> OrderSuccess(int id)
         {
@@ -189,7 +200,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
 
             return View(order);
         }
-        [SessionAuthorize(UserRoles.Farmer)]
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
         [HttpGet]
         public async Task<IActionResult> FarmerOrders(string? status)
         {
@@ -226,7 +237,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
 
             return View(orders);
         }
-        [SessionAuthorize(UserRoles.Farmer)]
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
         [HttpGet]
         public async Task<IActionResult> FarmerOrderDetails(int id)
         {
@@ -257,7 +268,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
 
             return View(order);
         }
-        [SessionAuthorize(UserRoles.Farmer)]
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(
@@ -397,7 +408,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 new { id = order.Id }
             );
         }
-        [SessionAuthorize(UserRoles.Consumer)]
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
         [HttpGet]
         public async Task<IActionResult> MyOrders(string? status)
         {
@@ -432,7 +443,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
 
             return View(orders);
         }
-        [SessionAuthorize(UserRoles.Consumer)]
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
         [HttpGet]
         public async Task<IActionResult> ConsumerOrderDetails(
      int id)
@@ -470,7 +481,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
 
             return View(order);
         }
-        [SessionAuthorize(UserRoles.Consumer)]
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConsumerCancelOrder(

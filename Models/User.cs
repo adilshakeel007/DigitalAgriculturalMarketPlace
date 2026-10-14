@@ -39,6 +39,10 @@ namespace DigitalAgriculturalMarketplace.Models
         public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
         public SellerProfile? SellerProfile { get; set; }
+        public ICollection<CatalogProduct> SubmittedCatalogProducts { get; set; }
+            = new List<CatalogProduct>();
+        public ICollection<CatalogProduct> ReviewedCatalogProducts { get; set; }
+            = new List<CatalogProduct>();
 
         public ICollection<Product> Products { get; set; }
     = new List<Product>();

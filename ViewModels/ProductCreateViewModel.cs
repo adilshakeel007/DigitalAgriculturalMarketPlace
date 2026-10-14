@@ -23,6 +23,16 @@ namespace DigitalAgriculturalMarketplace.ViewModels
         [StringLength(1000)]
         public string? Description { get; set; }
 
+        [Required(ErrorMessage = "Select an approved catalog product.")]
+        public int? CatalogProductId { get; set; }
+
+        [Required(ErrorMessage = "Select a unit of measure.")]
+        public int? UnitOfMeasureId { get; set; }
+
+        public List<DigitalAgriculturalMarketplace.Models.CatalogProduct> CatalogProducts { get; set; } = new();
+
+        public List<DigitalAgriculturalMarketplace.Models.UnitOfMeasure> Units { get; set; } = new();
+
         [Required(ErrorMessage = "Please select a product image.")]
         public IFormFile? ImageFile { get; set; }
     }

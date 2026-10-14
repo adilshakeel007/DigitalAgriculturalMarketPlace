@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Routing;
 using Xunit;
 
@@ -75,14 +76,16 @@ public sealed class ExistingWorkflowTests : IClassFixture<SqlServerTestDatabase>
     }
 
     [Fact]
-    public void SessionAuthorization_WrongRole_IsRedirectedToAccessDenied()
+    public async Task SessionAuthorization_WrongRole_IsRedirectedToAccessDenied()
     {
+        await using var db = _database.CreateContext();
+        var user = await AddUser(db, UserRoles.Consumer);
         var session = new TestSession();
-        session.SetInt32("UserId", 123);
+        session.SetInt32("UserId", user.Id);
         session.SetString("UserType", UserRoles.Consumer);
-        var context = CreateAuthorizationContext(session);
+        var context = CreateAuthorizationContext(session, db);
 
-        new SessionAuthorizeAttribute(UserRoles.Farmer)
+        new SessionAuthorizeAttribute(UserRoles.Admin)
             .OnActionExecuting(context);
 
         var redirect = Assert.IsType<RedirectToActionResult>(context.Result);
@@ -263,9 +266,16 @@ public sealed class ExistingWorkflowTests : IClassFixture<SqlServerTestDatabase>
     }
 
     private static ActionExecutingContext CreateAuthorizationContext(
-        ISession session)
+        ISession session,
+        DigitalAgriculturalMarketPlace.Data.ApplicationDbContext? db = null)
     {
         var httpContext = new DefaultHttpContext { Session = session };
+        if (db != null)
+        {
+            httpContext.RequestServices = new ServiceCollection()
+                .AddSingleton(db)
+                .BuildServiceProvider();
+        }
         var actionContext = new ActionContext(
             httpContext,
             new RouteData(),

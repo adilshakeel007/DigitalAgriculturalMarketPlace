@@ -53,11 +53,34 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<string>("ReviewNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ReviewedByUserId")
+                        .HasColumnType("int");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("SubmittedByUserId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -66,9 +89,18 @@ namespace DigitalAgriculturalMarketPlace.Migrations
 
                     b.HasIndex("DefaultUnitId");
 
+                    b.HasIndex("ReviewedByUserId");
+
                     b.HasIndex("Category", "Name");
 
-                    b.ToTable("CatalogProducts");
+                    b.HasIndex("SubmittedByUserId", "Name", "Category", "DefaultUnitId", "Status")
+                        .IsUnique()
+                        .HasFilter("[SubmittedByUserId] IS NOT NULL AND [DefaultUnitId] IS NOT NULL");
+
+                    b.ToTable("CatalogProducts", t =>
+                        {
+                            t.HasCheckConstraint("CK_CatalogProducts_Status", "[Status] IN ('Pending', 'Approved', 'Rejected')");
+                        });
                 });
 
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Message", b =>
@@ -491,7 +523,21 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                         .HasForeignKey("DefaultUnitId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.User", "ReviewedByUser")
+                        .WithMany("ReviewedCatalogProducts")
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.User", "SubmittedByUser")
+                        .WithMany("SubmittedCatalogProducts")
+                        .HasForeignKey("SubmittedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("DefaultUnit");
+
+                    b.Navigation("ReviewedByUser");
+
+                    b.Navigation("SubmittedByUser");
                 });
 
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Message", b =>
@@ -636,11 +682,15 @@ namespace DigitalAgriculturalMarketPlace.Migrations
 
                     b.Navigation("ReceivedMessages");
 
+                    b.Navigation("ReviewedCatalogProducts");
+
                     b.Navigation("Reviews");
 
                     b.Navigation("SellerProfile");
 
                     b.Navigation("SentMessages");
+
+                    b.Navigation("SubmittedCatalogProducts");
                 });
 #pragma warning restore 612, 618
         }

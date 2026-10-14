@@ -22,7 +22,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             _logger = logger;
             _context = context;
         }
-        [SessionAuthorize(UserRoles.Farmer)]
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
         public async Task<IActionResult> FarmerDashboard()
         {
             int? farmerId =
@@ -152,7 +152,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
 
             return View(model);
         }
-        [SessionAuthorize(UserRoles.Consumer)]
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
         public async Task<IActionResult> ConsumerDashboard()
         {
             int? consumerId =
@@ -269,18 +269,58 @@ namespace DigitalAgriculturalMarketPlace.Controllers
         {
             return RedirectToAction(nameof(Index));
         }
+
+        [SessionAuthorize(UserRoles.MarketplaceMember)]
+        public async Task<IActionResult> Dashboard()
+        {
+            int userId = HttpContext.Session.GetInt32("UserId")!.Value;
+
+            var model = new MemberDashboardViewModel
+            {
+                PurchaseCount = await _context.Orders.CountAsync(o => o.ConsumerId == userId),
+                ActivePurchaseCount = await _context.Orders.CountAsync(o =>
+                    o.ConsumerId == userId &&
+                    (o.Status == "Pending" || o.Status == "Confirmed")),
+                ListingCount = await _context.Products.CountAsync(p => p.FarmerId == userId),
+                ActiveListingCount = await _context.Products.CountAsync(p =>
+                    p.FarmerId == userId && p.IsActive),
+                SalesCount = await _context.Orders.CountAsync(o =>
+                    o.Product != null && o.Product.FarmerId == userId),
+                PendingSalesCount = await _context.Orders.CountAsync(o =>
+                    o.Product != null && o.Product.FarmerId == userId && o.Status == "Pending"),
+                UnreadMessages = await _context.Messages.CountAsync(m =>
+                    m.ReceiverId == userId && !m.IsRead),
+                UnreadNotifications = await _context.Notifications.CountAsync(n =>
+                    n.UserId == userId && !n.IsRead),
+                SellerProfile = await _context.SellerProfiles
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.UserId == userId),
+                RecentPurchases = await _context.Orders
+                    .Include(o => o.Product)
+                    .Where(o => o.ConsumerId == userId)
+                    .OrderByDescending(o => o.OrderDate)
+                    .Take(5)
+                    .ToListAsync(),
+                RecentSales = await _context.Orders
+                    .Include(o => o.Product)
+                    .Include(o => o.Consumer)
+                    .Where(o => o.Product != null && o.Product.FarmerId == userId)
+                    .OrderByDescending(o => o.OrderDate)
+                    .Take(5)
+                    .ToListAsync()
+            };
+
+            return View(model);
+        }
         public IActionResult Index()
         {
             string? userType = HttpContext.Session.GetString("UserType");
 
-            if (userType == UserRoles.Farmer)
+            if (userType == UserRoles.Farmer ||
+                userType == UserRoles.Consumer ||
+                userType == UserRoles.Member)
             {
-                return RedirectToAction(nameof(FarmerDashboard));
-            }
-
-            if (userType == UserRoles.Consumer)
-            {
-                return RedirectToAction(nameof(ConsumerDashboard));
+                return RedirectToAction(nameof(Dashboard));
             }
 
             if (userType == UserRoles.Admin)

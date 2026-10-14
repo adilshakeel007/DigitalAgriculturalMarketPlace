@@ -1,0 +1,17 @@
+@model DigitalAgriculturalMarketplace.Models.SellerProfile?
+@{ ViewData["Title"] = "Seller profile"; }
+<div class="container checkout-container">
+    <div class="page-header"><div><p class="eyebrow">Selling</p><h1 class="h2">Seller profile</h1><p>Control how your seller identity appears in the marketplace.</p></div></div>
+    @if (Model == null)
+    {
+        <div class="panel"><div class="panel-body empty-state"><h2 class="h5">You have not activated selling</h2><p>Create one seller profile to start proposing catalog products and creating listings.</p><a class="btn btn-primary" asp-action="Activate">Activate seller profile</a></div></div>
+    }
+    else
+    {
+        <div class="panel"><div class="panel-body">
+            <div class="d-flex justify-content-between align-items-start gap-3"><div><h2 class="h4 mb-1">@Model.DisplayName</h2><span class="status-pill @(Model.IsActive ? "status-completed" : "status-neutral")">@(Model.IsActive ? "Active" : "Paused")</span></div><span class="product-meta">Verification: @Model.VerificationStatus</span></div>
+            <p class="mt-4 mb-4">@(string.IsNullOrWhiteSpace(Model.Description) ? "No seller description provided." : Model.Description)</p>
+            <div class="d-flex flex-wrap gap-2"><a class="btn btn-primary" asp-action="Edit">Edit profile</a><form asp-action="ToggleActive" method="post" data-confirm="@(Model.IsActive ? "Pause selling from this account?" : "Reactivate selling?")"><input type="hidden" name="rowVersion" value="@Convert.ToBase64String(Model.RowVersion)" /><button class="btn btn-secondary" type="submit">@(Model.IsActive ? "Pause selling" : "Reactivate selling")</button></form><a class="btn btn-outline-primary" asp-controller="CatalogProducts" asp-action="Index">Catalog proposals</a></div>
+        </div></div>
+    }
+</div>

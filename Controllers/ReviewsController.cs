@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace DigitalAgriculturalMarketPlace.Controllers
 {
-    [SessionAuthorize(UserRoles.Consumer)]
+    [SessionAuthorize(UserRoles.MarketplaceMember)]
     public class ReviewsController : Controller
     {
         public IActionResult Index()

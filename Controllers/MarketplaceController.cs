@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DigitalAgriculturalMarketplace.Controllers
 {
-    [SessionAuthorize(UserRoles.Consumer)]
+    [SessionAuthorize(UserRoles.MarketplaceMember)]
     public class MarketplaceController : Controller
     {
         private readonly ApplicationDbContext _context;

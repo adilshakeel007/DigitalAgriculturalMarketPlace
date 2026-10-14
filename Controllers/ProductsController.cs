@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DigitalAgriculturalMarketplace.Controllers
 {
-    [SessionAuthorize(UserRoles.Farmer)]
+    [SessionAuthorize(UserRoles.MarketplaceMember)]
     public class ProductsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -39,20 +39,41 @@ namespace DigitalAgriculturalMarketplace.Controllers
         public async Task<IActionResult> Create(
     ProductCreateViewModel model)
         {
+            int? farmerId = HttpContext.Session.GetInt32("UserId");
+            if (farmerId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            bool canSell = await _context.SellerProfiles.AnyAsync(s =>
+                s.UserId == farmerId.Value && s.IsActive);
+            if (!canSell)
+            {
+                TempData["ErrorMessage"] = "Activate your seller profile before creating a listing.";
+                return RedirectToAction("Activate", "SellerProfiles");
+            }
+
+            bool approvedCatalogProduct = model.CatalogProductId.HasValue &&
+                await _context.CatalogProducts.AnyAsync(c =>
+                    c.Id == model.CatalogProductId.Value &&
+                    c.Status == "Approved" && c.IsActive);
+            if (!approvedCatalogProduct)
+            {
+                ModelState.AddModelError(nameof(model.CatalogProductId), "Select an approved catalog product.");
+            }
+
+            bool activeUnit = model.UnitOfMeasureId.HasValue &&
+                await _context.UnitsOfMeasure.AnyAsync(u =>
+                    u.Id == model.UnitOfMeasureId.Value && u.IsActive);
+            if (!activeUnit)
+            {
+                ModelState.AddModelError(nameof(model.UnitOfMeasureId), "Select an active unit of measure.");
+            }
+
+            await PopulateListingOptions(model);
             if (!ModelState.IsValid)
             {
                 return View(model);
-            }
-
-            int? farmerId =
-                HttpContext.Session.GetInt32("UserId");
-
-            if (farmerId == null)
-            {
-                return RedirectToAction(
-                    "Login",
-                    "Account"
-                );
             }
 
             string? imageUrl = null;
@@ -152,6 +173,14 @@ namespace DigitalAgriculturalMarketplace.Controllers
                 ImageUrl = imageUrl,
 
                 FarmerId = farmerId.Value,
+
+                CatalogProductId = model.CatalogProductId,
+
+                UnitOfMeasureId = model.UnitOfMeasureId,
+
+                AvailableQuantity = model.Quantity,
+
+                ReservedQuantity = 0,
 
                 ListedAt = DateTime.Now,
 
@@ -483,9 +512,32 @@ namespace DigitalAgriculturalMarketplace.Controllers
             return RedirectToAction("Index");
         }
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View();
+            int userId = HttpContext.Session.GetInt32("UserId")!.Value;
+            bool canSell = await _context.SellerProfiles.AnyAsync(s =>
+                s.UserId == userId && s.IsActive);
+            if (!canSell)
+            {
+                TempData["ErrorMessage"] = "Activate your seller profile before creating a listing.";
+                return RedirectToAction("Activate", "SellerProfiles");
+            }
+
+            var model = new ProductCreateViewModel();
+            await PopulateListingOptions(model);
+            return View(model);
+        }
+
+        private async Task PopulateListingOptions(ProductCreateViewModel model)
+        {
+            model.CatalogProducts = await _context.CatalogProducts
+                .Where(c => c.Status == "Approved" && c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+            model.Units = await _context.UnitsOfMeasure
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.Name)
+                .ToListAsync();
         }
     }
 }

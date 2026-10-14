@@ -117,27 +117,6 @@ namespace DigitalAgriculturalMarketplace.Controllers
 
                 if (string.Equals(
     userType,
-    UserRoles.Consumer,
-    StringComparison.OrdinalIgnoreCase))
-                {
-                    return RedirectToAction(
-                        "FarmerDashboard",
-                        "Home"
-                    );
-                }
-
-                if (string.Equals(
-    userType,
-    UserRoles.Farmer,
-    StringComparison.OrdinalIgnoreCase))
-                {
-                    return RedirectToAction(
-                        "ConsumerDashboard",
-                        "Home"
-                    );
-                }
-                if (string.Equals(
-    userType,
     UserRoles.Admin,
     StringComparison.OrdinalIgnoreCase))
                 {
@@ -147,10 +126,7 @@ namespace DigitalAgriculturalMarketplace.Controllers
                     );
                 }
 
-                return RedirectToAction(
-                    "Index",
-                    "Home"
-                );
+                return RedirectToAction("Dashboard", "Home");
             }
 
             return View();
@@ -213,14 +189,9 @@ namespace DigitalAgriculturalMarketplace.Controllers
                 );
             }
 
-            if (user.UserType == UserRoles.Farmer)
+            if (user.UserType != UserRoles.Admin)
             {
-                return RedirectToAction("FarmerDashboard", "Home");
-            }
-
-            if (user.UserType == UserRoles.Consumer)
-            {
-                return RedirectToAction("ConsumerDashboard", "Home");
+                return RedirectToAction("Dashboard", "Home");
             }
 
             return RedirectToAction("Index", "Home");

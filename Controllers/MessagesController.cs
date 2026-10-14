@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DigitalAgriculturalMarketPlace.Controllers
 {
-    [SessionAuthorize]
+    [SessionAuthorize(UserRoles.MarketplaceMember)]
     public class MessagesController : Controller
     {
         private readonly ApplicationDbContext _context;

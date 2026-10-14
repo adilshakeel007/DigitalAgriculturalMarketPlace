@@ -12,6 +12,31 @@
                 <div class="panel"><div class="panel-body">
                     <section class="form-section">
                         <h2 class="form-section-title">Product information</h2>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-8">
+                                <label asp-for="CatalogProductId" class="form-label">Approved catalog product</label>
+                                <select asp-for="CatalogProductId" class="form-select">
+                                    <option value="">Select a catalog product</option>
+                                    @foreach (var item in Model.CatalogProducts)
+                                    {
+                                        <option value="@item.Id">@item.Name — @item.Category</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="CatalogProductId" class="text-danger small"></span>
+                                <div class="form-text"><a asp-controller="CatalogProducts" asp-action="Create">Propose a missing catalog product</a></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="UnitOfMeasureId" class="form-label">Unit of measure</label>
+                                <select asp-for="UnitOfMeasureId" class="form-select">
+                                    <option value="">Select a unit</option>
+                                    @foreach (var unit in Model.Units)
+                                    {
+                                        <option value="@unit.Id">@unit.Name (@unit.Code)</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="UnitOfMeasureId" class="text-danger small"></span>
+                            </div>
+                        </div>
                         <div class="row g-3">
                             <div class="col-md-7"><label asp-for="Name" class="form-label">Product name</label><input asp-for="Name" class="form-control" placeholder="e.g. Fresh tomatoes" autofocus /><span asp-validation-for="Name" class="text-danger small"></span></div>
                             <div class="col-md-5"><label asp-for="Category" class="form-label"></label><select asp-for="Category" class="form-select"><option value="">Choose category</option><option value="Vegetables">Vegetables</option><option value="Fruits">Fruits</option><option value="Grains">Grains</option><option value="Dairy">Dairy</option><option value="Other">Other</option></select><span asp-validation-for="Category" class="text-danger small"></span></div>
@@ -21,7 +46,7 @@
                     <section class="form-section">
                         <h2 class="form-section-title">Pricing and inventory</h2>
                         <div class="row g-3">
-                            <div class="col-md-6"><label asp-for="PricePerUnit" class="form-label">Price per unit (Rs.)</label><input asp-for="PricePerUnit" class="form-control" min="0.01" step="0.01" /><span asp-validation-for="PricePerUnit" class="text-danger small"></span><div class="form-text">The exact unit type is not stored separately, so make it clear in the product name or description.</div></div>
+                            <div class="col-md-6"><label asp-for="PricePerUnit" class="form-label">Price per unit (Rs.)</label><input asp-for="PricePerUnit" class="form-control" min="0.01" step="0.01" /><span asp-validation-for="PricePerUnit" class="text-danger small"></span></div>
                             <div class="col-md-6"><label asp-for="Quantity" class="form-label">Available quantity</label><input asp-for="Quantity" class="form-control" min="0" step="1" /><span asp-validation-for="Quantity" class="text-danger small"></span><div class="form-text">Inventory decreases when an order is placed.</div></div>
                         </div>
                     </section>
