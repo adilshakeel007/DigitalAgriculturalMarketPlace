@@ -1,10 +1,10 @@
 @model DigitalAgriculturalMarketplace.Models.Order
-@{ ViewData["Title"] = $"Order #{Model.Id}"; }
+@{ ViewData["Title"] = Model.OrderNumber ?? $"Order #{Model.Id}"; var item = Model.Items.FirstOrDefault(); }
 
 <div class="management-shell">
     <partial name="_FarmerSidebar" />
     <div class="management-content">
-        <div class="management-header"><div><h1>Order #@Model.Id</h1><p>Placed @Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</p></div><a class="btn btn-secondary btn-sm" asp-action="FarmerOrders">Back to orders</a></div>
+        <div class="management-header"><div><h1>@(Model.OrderNumber ?? $"Order #{Model.Id}")</h1><p>Placed @Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</p></div><a class="btn btn-secondary btn-sm" asp-action="FarmerOrders">Back to orders</a></div>
         @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
         @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div> }
 
@@ -12,7 +12,7 @@
         <div class="order-detail-grid">
             <div class="d-grid gap-3">
                 <section class="panel"><div class="panel-header"><h2>Order details</h2><partial name="_OrderStatus" model="Model.Status" /></div><div class="panel-body"><dl class="detail-list">
-                    <dt>Product</dt><dd>@Model.Product?.Name</dd><dt>Quantity</dt><dd>@Model.Quantity unit(s)</dd><dt>Total</dt><dd>Rs. @Model.TotalPrice.ToString("N2")</dd><dt>Placed</dt><dd>@Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</dd>
+                    <dt>Product</dt><dd>@(item?.ProductNameSnapshot ?? Model.Product?.Name)</dd><dt>Quantity</dt><dd>@((item?.Quantity ?? Model.Quantity).ToString("0.###")) @(item?.UnitNameSnapshot ?? "unit not recorded")</dd><dt>Agreed price</dt><dd>Rs. @((item?.UnitPrice ?? (Model.TotalPrice/Model.Quantity)).ToString("N2"))</dd><dt>Total</dt><dd>Rs. @Model.TotalPrice.ToString("N2")</dd><dt>Placed</dt><dd>@Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</dd>@if(!string.IsNullOrWhiteSpace(Model.CancellationReason)){<dt>Cancellation reason</dt><dd>@Model.CancellationReason</dd>}
                 </dl></div></section>
                 <section class="panel"><div class="panel-header"><h2>Customer</h2></div><div class="panel-body"><dl class="detail-list"><dt>Name</dt><dd>@Model.Consumer?.Name</dd><dt>Phone</dt><dd>@Model.Consumer?.Phone</dd></dl>@if (Model.Consumer != null) { <a class="btn btn-sm btn-outline-primary mt-3" asp-controller="Messages" asp-action="Send" asp-route-receiverId="@Model.Consumer.Id" asp-route-productId="@Model.ProductId">Message customer</a> }</div></section>
             </div>
@@ -33,9 +33,9 @@
                 }
                 @if (Model.Status == "Pending" || Model.Status == "Confirmed")
                 {
-                    <form asp-action="UpdateStatus" method="post" data-confirm="Cancel this order and return its quantity to stock?"><input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="status" value="Cancelled" /><button class="btn btn-link text-danger w-100" type="submit">Cancel order</button></form>
+                    <form asp-action="UpdateStatus" method="post" data-confirm="Cancel this order and release its reserved quantity?"><input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="status" value="Cancelled" /><input class="form-control form-control-sm" name="reason" maxlength="500" placeholder="Cancellation reason (optional)" /><button class="btn btn-link text-danger w-100" type="submit">Cancel order</button></form>
                 }
             </div></aside>
-        </div>
+        </div><partial name="_OrderHistory" model="Model" />
     </div>
 </div>

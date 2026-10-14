@@ -1,5 +1,6 @@
 using DigitalAgriculturalMarketPlace.Data;
 using Microsoft.EntityFrameworkCore;
+using DigitalAgriculturalMarketplace.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
@@ -15,6 +16,8 @@ builder.Services.AddSession(options =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<InventoryService>();
+builder.Services.AddScoped<OrderWorkflowService>();
 
 var app = builder.Build();
 

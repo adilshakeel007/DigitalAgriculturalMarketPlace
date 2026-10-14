@@ -13,6 +13,7 @@
 
         <form asp-controller="Orders" asp-action="PlaceOrder" method="post" data-order-form data-unit-price="@Model.PricePerUnit.ToString(System.Globalization.CultureInfo.InvariantCulture)">
             <input type="hidden" asp-for="ProductId" />
+            <input type="hidden" asp-for="OperationKey" />
             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
             <div class="mb-4">

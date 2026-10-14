@@ -20,15 +20,17 @@
                     <tbody>
                     @foreach (var product in Model)
                     {
-                        string stockClass = product.Quantity == 0 ? "out" : product.Quantity <= 5 ? "low" : string.Empty;
-                        string stockText = product.Quantity == 0 ? "Out of stock" : product.Quantity <= 5 ? $"Low stock · {product.Quantity}" : $"{product.Quantity} in stock";
+                        decimal available = product.AvailableQuantity ?? product.Quantity;
+                        string stockClass = available == 0 ? "out" : available <= 5 ? "low" : string.Empty;
+                        string unit = product.UnitOfMeasure?.Code ?? "unit not mapped";
+                        string stockText = available == 0 ? "Out of stock" : $"{available:0.###} available";
                         <tr>
                             <td><div class="d-flex align-items-center gap-3">@if (!string.IsNullOrEmpty(product.ImageUrl)) { <img class="table-thumbnail" src="@product.ImageUrl" alt="" loading="lazy" /> } else { <span class="table-thumbnail product-image-placeholder" aria-hidden="true">A</span> }<div><strong>@product.Name</strong><div class="product-meta">@product.Category</div></div></div></td>
                             <td><strong>Rs. @product.PricePerUnit.ToString("N2")</strong><div class="product-meta">per unit</div></td>
-                            <td><span class="stock-label @stockClass">@stockText</span></td>
+                            <td><span class="stock-label @stockClass">@stockText</span><div class="product-meta">@product.ReservedQuantity.ToString("0.###") reserved · @((available+product.ReservedQuantity).ToString("0.###")) on hand · @unit</div></td>
                             <td><span class="status-pill @(product.IsActive ? "status-completed" : "status-neutral")"><span class="status-dot"></span>@(product.IsActive ? "Active" : "Hidden")</span></td>
                             <td>@product.ListedAt.ToString("dd MMM yyyy")</td>
-                            <td class="text-nowrap"><a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-sm btn-secondary">Edit</a><a asp-action="Details" asp-route-id="@product.Id" class="btn btn-sm btn-link">View</a><a asp-action="Delete" asp-route-id="@product.Id" class="btn btn-sm btn-link text-danger">Remove</a></td>
+                            <td class="text-nowrap"><a asp-action="AdjustInventory" asp-route-id="@product.Id" class="btn btn-sm btn-primary">Inventory</a><a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-sm btn-secondary">Edit</a><a asp-action="Details" asp-route-id="@product.Id" class="btn btn-sm btn-link">View</a></td>
                         </tr>
                     }
                     </tbody>

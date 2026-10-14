@@ -1,8 +1,8 @@
 @model DigitalAgriculturalMarketplace.Models.Order
-@{ ViewData["Title"] = $"Order #{Model.Id}"; }
+@{ ViewData["Title"] = Model.OrderNumber ?? $"Order #{Model.Id}"; var item = Model.Items.FirstOrDefault(); }
 
 <div class="container">
-    <div class="page-header"><div><p class="eyebrow">My orders</p><h1 class="h2">Order #@Model.Id</h1><p>Placed @Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</p></div><a class="btn btn-secondary" asp-action="MyOrders">Back to orders</a></div>
+    <div class="page-header"><div><p class="eyebrow">My orders</p><h1 class="h2">@(Model.OrderNumber ?? $"Order #{Model.Id}")</h1><p>Placed @Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</p></div><a class="btn btn-secondary" asp-action="MyOrders">Back to orders</a></div>
     @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
     @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div> }
 
@@ -13,14 +13,14 @@
                 @if (!string.IsNullOrWhiteSpace(Model.Product?.ImageUrl)) { <img class="table-thumbnail" src="@Model.Product.ImageUrl" alt="" /> } else { <span class="table-thumbnail product-image-placeholder">A</span> }
                 <div><h3 class="h6 mb-1">@Model.Product?.Name</h3><span class="product-meta">Sold by @Model.Product?.Farmer?.Name</span></div>
             </div>
-            <dl class="detail-list"><dt>Quantity</dt><dd>@Model.Quantity unit(s)</dd><dt>Total paid</dt><dd>Rs. @Model.TotalPrice.ToString("N2")</dd><dt>Order date</dt><dd>@Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</dd></dl>
+            <dl class="detail-list"><dt>Quantity</dt><dd>@((item?.Quantity ?? Model.Quantity).ToString("0.###")) @(item?.UnitNameSnapshot ?? "unit not recorded")</dd><dt>Agreed price</dt><dd>Rs. @((item?.UnitPrice ?? (Model.TotalPrice/Model.Quantity)).ToString("N2"))</dd><dt>Total paid</dt><dd>Rs. @Model.TotalPrice.ToString("N2")</dd><dt>Order date</dt><dd>@Model.OrderDate.ToString("dd MMM yyyy, h:mm tt")</dd>@if(!string.IsNullOrWhiteSpace(Model.CancellationReason)){<dt>Cancellation reason</dt><dd>@Model.CancellationReason</dd>}</dl>
         </div></div>
 
         <aside class="panel align-self-start"><div class="panel-header"><h2>Order actions</h2></div><div class="panel-body d-grid gap-2">
             @if (Model.Status == "Pending")
             {
                 <p class="small text-muted">You can cancel while the order is still awaiting farmer confirmation.</p>
-                <form asp-action="ConsumerCancelOrder" method="post" data-confirm="Cancel this order and return its quantity to stock?"><input type="hidden" name="id" value="@Model.Id" /><button type="submit" class="btn btn-danger w-100">Cancel order</button></form>
+                <form asp-action="ConsumerCancelOrder" method="post" data-confirm="Cancel this order and release its reserved quantity?"><input type="hidden" name="id" value="@Model.Id" /><input class="form-control mb-2" name="cancellationReason" maxlength="500" placeholder="Reason (optional)" /><button type="submit" class="btn btn-danger w-100">Cancel order</button></form>
             }
             @if (Model.Status == "Completed")
             {
@@ -29,5 +29,5 @@
             }
             @if (Model.Product?.Farmer != null) { <a class="btn btn-outline-primary" asp-controller="Messages" asp-action="Send" asp-route-receiverId="@Model.Product.Farmer.Id" asp-route-productId="@Model.ProductId">Message farmer</a> }
         </div></aside>
-    </div>
+    </div><partial name="_OrderHistory" model="Model" />
 </div>

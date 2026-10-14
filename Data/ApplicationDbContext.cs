@@ -19,6 +19,10 @@ namespace DigitalAgriculturalMarketPlace.Data
         public DbSet<SellerProfile> SellerProfiles { get; set; }
         public DbSet<UnitOfMeasure> UnitsOfMeasure { get; set; }
         public DbSet<CatalogProduct> CatalogProducts { get; set; }
+        public DbSet<InventoryMovement> InventoryMovements { get; set; }
+        public DbSet<InventoryReservation> InventoryReservations { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<OrderStatusHistory> OrderStatusHistory { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         { 
             base.OnModelCreating(modelBuilder);
@@ -163,6 +167,36 @@ namespace DigitalAgriculturalMarketPlace.Data
                 .WithMany(p => p.Orders)
                 .HasForeignKey(o => o.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Order>().Property(o => o.RowVersion).IsRowVersion();
+            modelBuilder.Entity<Order>().HasIndex(o => o.OrderNumber).IsUnique().HasFilter("[OrderNumber] IS NOT NULL");
+            modelBuilder.Entity<Order>().HasIndex(o => new { o.SellerId, o.Status });
+            modelBuilder.Entity<Order>().HasOne(o => o.Seller).WithMany().HasForeignKey(o => o.SellerId).OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OrderItem>().Property(x => x.RowVersion).IsRowVersion();
+            modelBuilder.Entity<OrderItem>().HasIndex(x => x.OrderId);
+            modelBuilder.Entity<OrderItem>().HasOne(x => x.Order).WithMany(o => o.Items).HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<OrderItem>().HasOne(x => x.Product).WithMany(p => p.OrderItems).HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<OrderItem>().HasOne(x => x.Seller).WithMany().HasForeignKey(x => x.SellerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<OrderItem>().ToTable(t => t.HasCheckConstraint("CK_OrderItems_Quantity_Positive", "[Quantity] > 0"));
+
+            modelBuilder.Entity<InventoryReservation>().Property(x => x.RowVersion).IsRowVersion();
+            modelBuilder.Entity<InventoryReservation>().HasIndex(x => x.OperationKey).IsUnique();
+            modelBuilder.Entity<InventoryReservation>().HasIndex(x => new { x.ProductId, x.Status });
+            modelBuilder.Entity<InventoryReservation>().HasOne(x => x.Product).WithMany(p => p.InventoryReservations).HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<InventoryReservation>().HasOne(x => x.OrderItem).WithOne(i => i.Reservation).HasForeignKey<InventoryReservation>(x => x.OrderItemId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<InventoryReservation>().ToTable(t => { t.HasCheckConstraint("CK_InventoryReservations_Quantity_Positive", "[Quantity] > 0"); t.HasCheckConstraint("CK_InventoryReservations_Status", "[Status] IN ('Active','Released','Consumed')"); t.HasCheckConstraint("CK_InventoryReservations_TerminalState", "NOT ([ReleasedAt] IS NOT NULL AND [ConsumedAt] IS NOT NULL)"); });
+
+            modelBuilder.Entity<InventoryMovement>().HasIndex(x => x.OperationKey).IsUnique();
+            modelBuilder.Entity<InventoryMovement>().HasIndex(x => new { x.ProductId, x.CreatedAt });
+            modelBuilder.Entity<InventoryMovement>().HasOne(x => x.Product).WithMany(p => p.InventoryMovements).HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<InventoryMovement>().HasOne(x => x.PerformedByUser).WithMany().HasForeignKey(x => x.PerformedByUserId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<InventoryMovement>().ToTable(t => { t.HasCheckConstraint("CK_InventoryMovements_AvailableAfter", "[AvailableAfter] >= 0"); t.HasCheckConstraint("CK_InventoryMovements_ReservedAfter", "[ReservedAfter] >= 0"); });
+
+            modelBuilder.Entity<OrderStatusHistory>().HasIndex(x => x.OperationKey).IsUnique();
+            modelBuilder.Entity<OrderStatusHistory>().HasIndex(x => new { x.OrderId, x.ChangedAt });
+            modelBuilder.Entity<OrderStatusHistory>().HasOne(x => x.Order).WithMany(o => o.StatusHistory).HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<OrderStatusHistory>().HasOne(x => x.ChangedByUser).WithMany().HasForeignKey(x => x.ChangedByUserId).OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Review>()
         .HasOne(r => r.Consumer)

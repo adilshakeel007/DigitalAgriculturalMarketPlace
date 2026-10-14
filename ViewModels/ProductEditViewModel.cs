@@ -19,9 +19,6 @@ namespace DigitalAgriculturalMarketplace.ViewModels
         [Range(0.01, 1000000)]
         public decimal PricePerUnit { get; set; }
 
-        [Range(0, 1000000)]
-        public int Quantity { get; set; }
-
         [StringLength(1000)]
         public string? Description { get; set; }
 

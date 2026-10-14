@@ -21,7 +21,7 @@
         {
             <div class="panel"><div class="panel-header"><div><h2>Order list</h2><p>@Model.Count() order(s)</p></div></div><div class="table-responsive border-0 rounded-0 shadow-none"><table class="table table-hover">
                 <thead><tr><th>Order</th><th>Product</th><th>Customer</th><th>Total</th><th>Status</th><th>Placed</th><th></th></tr></thead>
-                <tbody>@foreach (var order in Model) { <tr><td>#@order.Id</td><td><strong>@order.Product?.Name</strong><div class="product-meta">Qty @order.Quantity</div></td><td>@order.Consumer?.Name</td><td>Rs. @order.TotalPrice.ToString("N2")</td><td><partial name="_OrderStatus" model="order.Status" /></td><td>@order.OrderDate.ToString("dd MMM yyyy")</td><td><a class="btn btn-sm btn-secondary" asp-action="FarmerOrderDetails" asp-route-id="@order.Id">Manage</a></td></tr> }</tbody>
+                <tbody>@foreach (var order in Model) { var item=order.Items.FirstOrDefault(); <tr><td>@(order.OrderNumber ?? $"#{order.Id}")</td><td><strong>@(item?.ProductNameSnapshot ?? order.Product?.Name)</strong><div class="product-meta">@((item?.Quantity ?? order.Quantity).ToString("0.###")) @(item?.UnitNameSnapshot ?? "unit not recorded")</div></td><td>@order.Consumer?.Name</td><td>Rs. @order.TotalPrice.ToString("N2")</td><td><partial name="_OrderStatus" model="order.Status" /></td><td>@order.OrderDate.ToString("dd MMM yyyy")</td><td><a class="btn btn-sm btn-secondary" asp-action="FarmerOrderDetails" asp-route-id="@order.Id">Manage</a></td></tr> }</tbody>
             </table></div></div>
         }
     </div>

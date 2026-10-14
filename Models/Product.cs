@@ -64,5 +64,8 @@ namespace DigitalAgriculturalMarketplace.Models
     = new List<Review>();
         public ICollection<Message> Messages { get; set; }
     = new List<Message>();
+        public ICollection<InventoryMovement> InventoryMovements { get; set; } = new List<InventoryMovement>();
+        public ICollection<InventoryReservation> InventoryReservations { get; set; } = new List<InventoryReservation>();
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }

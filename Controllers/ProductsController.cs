@@ -5,6 +5,8 @@ using DigitalAgriculturalMarketplace.ViewModels;
 using DigitalAgriculturalMarketPlace.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using DigitalAgriculturalMarketplace.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 
 namespace DigitalAgriculturalMarketplace.Controllers
@@ -14,13 +16,17 @@ namespace DigitalAgriculturalMarketplace.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly InventoryService _inventory;
 
         public ProductsController(
             ApplicationDbContext context,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment) : this(context, environment, new InventoryService(context)) { }
+        [ActivatorUtilitiesConstructor]
+        public ProductsController(ApplicationDbContext context, IWebHostEnvironment environment, InventoryService inventory)
         {
             _context = context;
             _environment = environment;
+            _inventory = inventory;
         }
         public async Task<IActionResult> Index()
         {
@@ -28,6 +34,7 @@ namespace DigitalAgriculturalMarketplace.Controllers
                 HttpContext.Session.GetInt32("UserId");
 
             var products = await _context.Products
+                .Include(p => p.UnitOfMeasure)
                 .Where(p => p.FarmerId == farmerId)
                 .OrderByDescending(p => p.ListedAt)
                 .ToListAsync();
@@ -187,9 +194,13 @@ namespace DigitalAgriculturalMarketplace.Controllers
                 IsActive = true
             };
 
+            await using var inventoryTransaction = await _context.Database.BeginTransactionAsync();
             _context.Products.Add(product);
 
             await _context.SaveChangesAsync();
+            _inventory.AddMovement(product, "OpeningBalance", model.Quantity, 0, farmerId.Value, "Product", product.Id, "Initial listing stock", $"opening:product:{product.Id}");
+            await _context.SaveChangesAsync();
+            await inventoryTransaction.CommitAsync();
 
             TempData["SuccessMessage"] =
                 "Product added successfully.";
@@ -250,7 +261,6 @@ namespace DigitalAgriculturalMarketplace.Controllers
             product.Name = model.Name.Trim();
             product.Category = model.Category;
             product.PricePerUnit = model.PricePerUnit;
-            product.Quantity = model.Quantity;
             product.Description = model.Description;
             product.IsActive = model.IsActive;
 
@@ -409,13 +419,31 @@ namespace DigitalAgriculturalMarketplace.Controllers
                     Name = product.Name,
                     Category = product.Category,
                     PricePerUnit = product.PricePerUnit,
-                    Quantity = product.Quantity,
                     Description = product.Description,
                     IsActive = product.IsActive,
                     CurrentImageUrl = product.ImageUrl
                 };
 
             return View(model);
+        }
+        [HttpGet]
+        public async Task<IActionResult> AdjustInventory(int id)
+        {
+            int userId=HttpContext.Session.GetInt32("UserId")!.Value;
+            var product=await _context.Products.Include(p=>p.UnitOfMeasure).FirstOrDefaultAsync(p=>p.Id==id&&p.FarmerId==userId);
+            if(product is null) return NotFound();
+            if(product.UnitOfMeasureId is null) { TempData["ErrorMessage"]="Map a unit of measure before adjusting this legacy listing."; return RedirectToAction(nameof(Index)); }
+            ViewBag.Movements=await _context.InventoryMovements.Where(m=>m.ProductId==id).OrderByDescending(m=>m.CreatedAt).Take(10).ToListAsync();
+            return View(new InventoryAdjustmentViewModel { ProductId=id,ProductName=product.Name,CurrentAvailable=product.AvailableQuantity??product.Quantity,Reserved=product.ReservedQuantity,NewAvailable=product.AvailableQuantity??product.Quantity });
+        }
+        [HttpPost,ValidateAntiForgeryToken]
+        public async Task<IActionResult> AdjustInventory(InventoryAdjustmentViewModel model)
+        {
+            int userId=HttpContext.Session.GetInt32("UserId")!.Value;
+            if(!ModelState.IsValid) return View(model);
+            var result=await _inventory.AdjustAsync(model.ProductId,userId,model.NewAvailable,model.Reason,$"adjust:{model.OperationKey}");
+            if(!result.Succeeded){ModelState.AddModelError("",result.Message);return View(model);}
+            TempData["SuccessMessage"]=result.Message; return RedirectToAction(nameof(Index));
         }
         [HttpGet]
         public async Task<IActionResult> Delete(int id)

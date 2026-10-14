@@ -6,6 +6,8 @@ using DigitalAgriculturalMarketplace.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using DigitalAgriculturalMarketplace.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DigitalAgriculturalMarketPlace.Controllers
 {
@@ -13,10 +15,14 @@ namespace DigitalAgriculturalMarketPlace.Controllers
     public class OrdersController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly OrderWorkflowService _workflow;
 
-        public OrdersController(ApplicationDbContext context)
+        public OrdersController(ApplicationDbContext context) : this(context, new OrderWorkflowService(context, new InventoryService(context))) { }
+        [ActivatorUtilitiesConstructor]
+        public OrdersController(ApplicationDbContext context, OrderWorkflowService workflow)
         {
             _context = context;
+            _workflow = workflow;
         }
         [SessionAuthorize(UserRoles.MarketplaceMember)]
         [HttpGet]
@@ -27,7 +33,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 .FirstOrDefaultAsync(p =>
                     p.Id == productId &&
                     p.IsActive &&
-                    p.Quantity > 0 &&
+                    (p.AvailableQuantity ?? p.Quantity) > 0 &&
                     p.FarmerId != buyerId
                 );
 
@@ -42,7 +48,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     ProductId = product.Id,
                     ProductName = product.Name,
                     PricePerUnit = product.PricePerUnit,
-                    AvailableQuantity = product.Quantity,
+                    AvailableQuantity = product.AvailableQuantity ?? product.Quantity,
                     Quantity = 1
                 };
 
@@ -66,13 +72,9 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 );
             }
 
-            await using var transaction =
-                await _context.Database.BeginTransactionAsync(
-                    IsolationLevel.Serializable
-                );
-
             Product? product =
                 await _context.Products
+                    .Include(p => p.UnitOfMeasure)
                     .FirstOrDefaultAsync(p =>
                         p.Id == model.ProductId
                     );
@@ -94,7 +96,8 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             // Refill display-only values
             model.ProductName = product.Name;
             model.PricePerUnit = product.PricePerUnit;
-            model.AvailableQuantity = product.Quantity;
+            model.AvailableQuantity = product.AvailableQuantity ?? product.Quantity;
+            model.UnitName = product.UnitOfMeasure?.Name;
 
             if (!product.IsActive)
             {
@@ -106,76 +109,27 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 return View(model);
             }
 
-            if (product.Quantity <= 0)
-            {
-                ModelState.AddModelError(
-                    "",
-                    "This product is out of stock."
-                );
-
-                return View(model);
-            }
-
-            if (model.Quantity <= 0)
-            {
-                ModelState.AddModelError(
-                    "Quantity",
-                    "Quantity must be at least 1."
-                );
-
-                return View(model);
-            }
-
-            if (model.Quantity > product.Quantity)
-            {
-                ModelState.AddModelError(
-                    "Quantity",
-                    $"Only {product.Quantity} unit(s) are available."
-                );
-
-                return View(model);
-            }
-
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-            decimal totalPrice =
-                product.PricePerUnit *
-                model.Quantity;
-
-            Order order = new Order
-            {
-                ConsumerId = consumerId.Value,
-                ProductId = product.Id,
-                Quantity = model.Quantity,
-                TotalPrice = totalPrice,
-                Status = "Pending",
-                OrderDate = DateTime.Now
-            };
-
-            _context.Orders.Add(order);
-
-            product.Quantity -= model.Quantity;
-
-            await _context.SaveChangesAsync();
+            var result = await _workflow.PlaceAsync(consumerId.Value, product.Id, model.Quantity, model.OperationKey);
+            if (!result.Succeeded) { ModelState.AddModelError("", result.Message); return View(model); }
             await CreateNotification(
     product.FarmerId,
     "New Order",
     $"A new order has been placed for {product.Name}.",
     "Order",
-    order.Id
+    result.OrderId
 );
-
-            await transaction.CommitAsync();
 
             TempData["SuccessMessage"] =
                 "Your order has been placed successfully.";
 
             return RedirectToAction(
                 "OrderSuccess",
-                new { id = order.Id }
+                new { id = result.OrderId }
             );
         }
         [SessionAuthorize(UserRoles.MarketplaceMember)]
@@ -218,6 +172,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             IQueryable<Order> ordersQuery = _context.Orders
                 .Include(o => o.Product)
                 .Include(o => o.Consumer)
+                .Include(o => o.Items)
                 .Where(o =>
                     o.Product != null &&
                     o.Product.FarmerId == farmerId.Value
@@ -255,6 +210,8 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             Order? order = await _context.Orders
                 .Include(o => o.Product)
                 .Include(o => o.Consumer)
+                .Include(o => o.Items)
+                .Include(o => o.StatusHistory)
                 .FirstOrDefaultAsync(o =>
                     o.Id == id &&
                     o.Product != null &&
@@ -273,7 +230,8 @@ namespace DigitalAgriculturalMarketPlace.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(
      int id,
-     string status)
+     string status,
+     string? reason = null)
         {
             int? farmerId =
                 HttpContext.Session.GetInt32("UserId");
@@ -286,126 +244,46 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 );
             }
 
-            await using var transaction =
-                await _context.Database.BeginTransactionAsync(
-                    IsolationLevel.Serializable
-                );
-
-            Order? order = await _context.Orders
-                .Include(o => o.Product)
-                .FirstOrDefaultAsync(o =>
-                    o.Id == id &&
-                    o.Product != null &&
-                    o.Product.FarmerId == farmerId.Value
-                );
-
-            if (order == null)
-            {
-                return NotFound();
-            }
-
-
-            // Prevent changing completed/cancelled orders
-            if (order.Status == "Completed" ||
-                order.Status == "Cancelled")
-            {
-                TempData["ErrorMessage"] =
-                    "This order can no longer be changed.";
-
-                return RedirectToAction(
-                    "FarmerOrderDetails",
-                    new { id = order.Id }
-                );
-            }
-
-
-            // PENDING -> CONFIRMED
-            if (order.Status == "Pending" &&
-                status == "Confirmed")
-            {
-                order.Status = "Confirmed";
-            }
-
-
-            // CONFIRMED -> COMPLETED
-            else if (order.Status == "Confirmed" &&
-                     status == "Completed")
-            {
-                order.Status = "Completed";
-            }
-
-
-            // PENDING / CONFIRMED -> CANCELLED
-            else if (
-                (order.Status == "Pending" ||
-                 order.Status == "Confirmed") &&
-                status == "Cancelled")
-            {
-                // Restore stock ONLY ONCE
-                if (order.Product != null)
-                {
-                    order.Product.Quantity += order.Quantity;
-                }
-
-                // Very important
-                order.Status = "Cancelled";
-            }
-
-
-            // Invalid status change
-            else
-            {
-                TempData["ErrorMessage"] =
-                    "Invalid order status change.";
-
-                return RedirectToAction(
-                    "FarmerOrderDetails",
-                    new { id = order.Id }
-                );
-            }
-
-
-            await _context.SaveChangesAsync();
+            var operationKey=$"seller:{id}:{status.ToLowerInvariant()}";
+            var result=await _workflow.TransitionAsync(id,farmerId.Value,true,status,string.IsNullOrWhiteSpace(reason)?null:reason.Trim(),operationKey);
+            if(!result.Succeeded) { TempData["ErrorMessage"]=result.Message; return RedirectToAction("FarmerOrderDetails",new{id}); }
             if (status == "Confirmed")
             {
                 await CreateNotification(
-                    order.ConsumerId,
+                    (await _context.Orders.FindAsync(id))!.ConsumerId,
                     "Order Confirmed",
-                    $"Your order #{order.Id} has been confirmed.",
+                    $"Your order #{id} has been confirmed.",
                     "Order",
-                    order.Id
+                    id
                 );
             }
             if (status == "Completed")
             {
                 await CreateNotification(
-                    order.ConsumerId,
+                    (await _context.Orders.FindAsync(id))!.ConsumerId,
                     "Order Completed",
-                    $"Your order #{order.Id} has been completed.",
+                    $"Your order #{id} has been completed.",
                     "Order",
-                    order.Id
+                    id
                 );
             }
             if (status == "Cancelled")
             {
                 await CreateNotification(
-                    order.ConsumerId,
+                    (await _context.Orders.FindAsync(id))!.ConsumerId,
                     "Order Cancelled",
-                    $"Your order #{order.Id} has been cancelled.",
+                    $"Your order #{id} has been cancelled.",
                     "Order",
-                    order.Id
+                    id
                 );
             }
-
-            await transaction.CommitAsync();
-
 
             TempData["SuccessMessage"] =
                 "Order status updated successfully.";
 
             return RedirectToAction(
                 "FarmerOrderDetails",
-                new { id = order.Id }
+                new { id }
             );
         }
         [SessionAuthorize(UserRoles.MarketplaceMember)]
@@ -425,6 +303,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
 
             IQueryable<Order> ordersQuery = _context.Orders
                 .Include(o => o.Product)
+                .Include(o => o.Items)
                 .Where(o =>
                     o.ConsumerId == consumerId.Value
                 );
@@ -462,6 +341,8 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             Order? order = await _context.Orders
                 .Include(o => o.Product)
                 .ThenInclude(p => p!.Farmer)
+                .Include(o => o.Items)
+                .Include(o => o.StatusHistory)
                 .FirstOrDefaultAsync(o =>
                     o.Id == id &&
                     o.ConsumerId == consumerId.Value
@@ -485,7 +366,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConsumerCancelOrder(
-    int id)
+    int id, string? cancellationReason = null)
         {
             int? consumerId =
                 HttpContext.Session.GetInt32("UserId");
@@ -497,11 +378,6 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     "Account"
                 );
             }
-
-            await using var transaction =
-                await _context.Database.BeginTransactionAsync(
-                    IsolationLevel.Serializable
-                );
 
             Order? order = await _context.Orders
                 .Include(o => o.Product)
@@ -515,28 +391,8 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 return NotFound();
             }
 
-            if (order.Status != "Pending")
-            {
-                TempData["ErrorMessage"] =
-                    "Only pending orders can be cancelled.";
-
-                return RedirectToAction(
-                    "ConsumerOrderDetails",
-                    new { id = order.Id }
-                );
-            }
-            if (order.Product != null)
-            {
-                order.Product.Quantity += order.Quantity;
-            }
-            else
-            {
-                return NotFound();
-            }
-
-            order.Status = "Cancelled";
-
-            await _context.SaveChangesAsync();
+            var result=await _workflow.TransitionAsync(id,consumerId.Value,false,"Cancelled",string.IsNullOrWhiteSpace(cancellationReason)?"Cancelled by buyer":cancellationReason.Trim(),$"buyer:{id}:cancel");
+            if(!result.Succeeded) { TempData["ErrorMessage"]=result.Message; return RedirectToAction("ConsumerOrderDetails",new{id}); }
             if (order.Product != null)
             {
                 await CreateNotification(
@@ -547,8 +403,6 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     order.Id
                 );
             }
-
-            await transaction.CommitAsync();
 
             TempData["SuccessMessage"] =
                 "Order cancelled successfully.";

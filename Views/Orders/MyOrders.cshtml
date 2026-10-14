@@ -20,10 +20,11 @@
         <div class="order-card-list">
             @foreach (var order in Model)
             {
+                var item = order.Items.FirstOrDefault();
                 <article class="order-list-card">
                     <div class="order-list-main">
                         @if (!string.IsNullOrWhiteSpace(order.Product?.ImageUrl)) { <img class="table-thumbnail" src="@order.Product.ImageUrl" alt="" loading="lazy" /> } else { <span class="table-thumbnail product-image-placeholder" aria-hidden="true">A</span> }
-                        <div class="min-width-0"><div class="d-flex flex-wrap align-items-center gap-2"><strong>@order.Product?.Name</strong><partial name="_OrderStatus" model="order.Status" /></div><div class="order-list-meta mt-1"><span>Order #@order.Id</span><span>@order.Quantity unit(s)</span><span>Rs. @order.TotalPrice.ToString("N2")</span><span>@order.OrderDate.ToString("dd MMM yyyy")</span></div></div>
+                        <div class="min-width-0"><div class="d-flex flex-wrap align-items-center gap-2"><strong>@(item?.ProductNameSnapshot ?? order.Product?.Name)</strong><partial name="_OrderStatus" model="order.Status" /></div><div class="order-list-meta mt-1"><span>@(order.OrderNumber ?? $"Order #{order.Id}")</span><span>@((item?.Quantity ?? order.Quantity).ToString("0.###")) @(item?.UnitNameSnapshot ?? "unit not recorded")</span><span>Rs. @order.TotalPrice.ToString("N2")</span><span>@order.OrderDate.ToString("dd MMM yyyy")</span></div></div>
                     </div>
                     <a class="btn btn-sm btn-outline-primary" asp-action="ConsumerOrderDetails" asp-route-id="@order.Id">View details</a>
                 </article>
