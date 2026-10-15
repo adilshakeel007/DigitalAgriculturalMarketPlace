@@ -52,6 +52,7 @@
                             <li class="nav-item"><a class="nav-link @ActiveLink("Admin", "Orders")" asp-controller="Admin" asp-action="Orders">Orders</a></li>
                             <li class="nav-item"><a class="nav-link @ActiveLink("Admin", "Reports")" asp-controller="Admin" asp-action="Reports">Reports</a></li>
                             <li class="nav-item"><a class="nav-link @ActiveLink("CatalogProducts")" asp-controller="CatalogProducts" asp-action="Moderation">Catalog</a></li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("AdminRfqs")" asp-controller="AdminRfqs" asp-action="Index">RFQs</a></li>
                         }
                         else
                         {
@@ -60,6 +61,7 @@
                             <li class="nav-item"><a class="nav-link @ActiveLink("Products")" asp-controller="Products" asp-action="Index">My listings</a></li>
                             <li class="nav-item"><a class="nav-link @ActiveLink("Orders", "MyOrders")" asp-controller="Orders" asp-action="MyOrders">My purchases</a></li>
                             <li class="nav-item"><a class="nav-link @ActiveLink("Orders", "FarmerOrders")" asp-controller="Orders" asp-action="FarmerOrders">My sales</a></li>
+                            <li class="nav-item"><a class="nav-link @ActiveLink("Rfqs", "Index")" asp-controller="Rfqs" asp-action="Index">My RFQs</a></li>
                         }
                     </ul>
 
@@ -86,6 +88,8 @@
                                     {
                                         <a class="dropdown-item" asp-controller="SellerProfiles" asp-action="Index">Seller profile</a>
                                         <a class="dropdown-item" asp-controller="CatalogProducts" asp-action="Index">Catalog proposals</a>
+                                        <a class="dropdown-item" asp-controller="Rfqs" asp-action="Browse">Open RFQs</a>
+                                        <a class="dropdown-item" asp-controller="Rfqs" asp-action="MyQuotations">My quotations</a>
                                         <a class="dropdown-item" asp-controller="Home" asp-action="Profile">Account</a>
                                         <div class="dropdown-divider"></div>
                                     }

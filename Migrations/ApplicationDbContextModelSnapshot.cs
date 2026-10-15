@@ -572,6 +572,183 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Quotation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("QuotationNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int>("RfqId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("SellerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ValidUntil")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuotationNumber")
+                        .IsUnique();
+
+                    b.HasIndex("SellerId");
+
+                    b.HasIndex("RfqId", "SellerId")
+                        .IsUnique();
+
+                    b.ToTable("Quotations", t =>
+                        {
+                            t.HasCheckConstraint("CK_Quotations_Status", "[Status] IN ('Draft','Submitted','PartiallyAccepted','Accepted','Rejected','Withdrawn','Expired')");
+                        });
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.QuotationAllocation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("AcceptedQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("AcceptedUnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BuyerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OperationKey")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuotationItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RfqItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SellerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BuyerId");
+
+                    b.HasIndex("OperationKey")
+                        .IsUnique();
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("QuotationItemId");
+
+                    b.HasIndex("SellerId");
+
+                    b.HasIndex("RfqItemId", "CreatedAt");
+
+                    b.ToTable("QuotationAllocations", t =>
+                        {
+                            t.HasCheckConstraint("CK_QuotationAllocations_Price", "[AcceptedUnitPrice] > 0");
+
+                            t.HasCheckConstraint("CK_QuotationAllocations_Quantity", "[AcceptedQuantity] > 0");
+                        });
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.QuotationItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AcceptedQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime>("EstimatedDeliveryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<decimal>("OfferedQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuotationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RfqItemId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("RfqItemId");
+
+                    b.HasIndex("QuotationId", "RfqItemId")
+                        .IsUnique();
+
+                    b.ToTable("QuotationItems", t =>
+                        {
+                            t.HasCheckConstraint("CK_QuotationItems_AcceptedQuantity", "[AcceptedQuantity] >= 0 AND [AcceptedQuantity] <= [OfferedQuantity]");
+
+                            t.HasCheckConstraint("CK_QuotationItems_OfferedQuantity", "[OfferedQuantity] > 0");
+
+                            t.HasCheckConstraint("CK_QuotationItems_UnitPrice", "[UnitPrice] > 0");
+                        });
+                });
+
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Review", b =>
                 {
                     b.Property<int>("Id")
@@ -604,6 +781,125 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                         .IsUnique();
 
                     b.ToTable("Reviews");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Rfq", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BuyerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeliveryLocation")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("RequiredByDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RfqNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RfqNumber")
+                        .IsUnique();
+
+                    b.HasIndex("BuyerId", "Status");
+
+                    b.ToTable("Rfqs", t =>
+                        {
+                            t.HasCheckConstraint("CK_Rfqs_Status", "[Status] IN ('Draft','Open','PartiallyFulfilled','Fulfilled','Closed','Cancelled')");
+                        });
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.RfqItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AcceptedQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("CatalogProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("MaximumBudgetPerUnit")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("RequestedQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("RfqId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Specifications")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("UnitOfMeasureId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CatalogProductId");
+
+                    b.HasIndex("UnitOfMeasureId");
+
+                    b.HasIndex("RfqId", "CatalogProductId", "UnitOfMeasureId")
+                        .IsUnique();
+
+                    b.ToTable("RfqItems", t =>
+                        {
+                            t.HasCheckConstraint("CK_RfqItems_AcceptedQuantity", "[AcceptedQuantity] >= 0 AND [AcceptedQuantity] <= [RequestedQuantity]");
+
+                            t.HasCheckConstraint("CK_RfqItems_RequestedQuantity", "[RequestedQuantity] > 0");
+                        });
                 });
 
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.SellerProfile", b =>
@@ -976,6 +1272,95 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                     b.Navigation("UnitOfMeasure");
                 });
 
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Quotation", b =>
+                {
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.Rfq", "Rfq")
+                        .WithMany("Quotations")
+                        .HasForeignKey("RfqId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.User", "Seller")
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Rfq");
+
+                    b.Navigation("Seller");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.QuotationAllocation", b =>
+                {
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.User", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.QuotationItem", "QuotationItem")
+                        .WithMany("Allocations")
+                        .HasForeignKey("QuotationItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.RfqItem", "RfqItem")
+                        .WithMany("Allocations")
+                        .HasForeignKey("RfqItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.User", "Seller")
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Buyer");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("QuotationItem");
+
+                    b.Navigation("RfqItem");
+
+                    b.Navigation("Seller");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.QuotationItem", b =>
+                {
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.Quotation", "Quotation")
+                        .WithMany("Items")
+                        .HasForeignKey("QuotationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.RfqItem", "RfqItem")
+                        .WithMany("QuotationItems")
+                        .HasForeignKey("RfqItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Quotation");
+
+                    b.Navigation("RfqItem");
+                });
+
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Review", b =>
                 {
                     b.HasOne("DigitalAgriculturalMarketplace.Models.User", "Consumer")
@@ -993,6 +1378,44 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                     b.Navigation("Consumer");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Rfq", b =>
+                {
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.User", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Buyer");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.RfqItem", b =>
+                {
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.CatalogProduct", "CatalogProduct")
+                        .WithMany()
+                        .HasForeignKey("CatalogProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.Rfq", "Rfq")
+                        .WithMany("Items")
+                        .HasForeignKey("RfqId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DigitalAgriculturalMarketplace.Models.UnitOfMeasure", "UnitOfMeasure")
+                        .WithMany()
+                        .HasForeignKey("UnitOfMeasureId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CatalogProduct");
+
+                    b.Navigation("Rfq");
+
+                    b.Navigation("UnitOfMeasure");
                 });
 
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.SellerProfile", b =>
@@ -1036,6 +1459,30 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                     b.Navigation("Orders");
 
                     b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Quotation", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.QuotationItem", b =>
+                {
+                    b.Navigation("Allocations");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.Rfq", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("Quotations");
+                });
+
+            modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.RfqItem", b =>
+                {
+                    b.Navigation("Allocations");
+
+                    b.Navigation("QuotationItems");
                 });
 
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.UnitOfMeasure", b =>

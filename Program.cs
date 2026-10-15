@@ -18,6 +18,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<InventoryService>();
 builder.Services.AddScoped<OrderWorkflowService>();
+builder.Services.AddScoped<RfqWorkflowService>();
 
 var app = builder.Build();
 

@@ -23,6 +23,11 @@ namespace DigitalAgriculturalMarketPlace.Data
         public DbSet<InventoryReservation> InventoryReservations { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<OrderStatusHistory> OrderStatusHistory { get; set; }
+        public DbSet<Rfq> Rfqs { get; set; }
+        public DbSet<RfqItem> RfqItems { get; set; }
+        public DbSet<Quotation> Quotations { get; set; }
+        public DbSet<QuotationItem> QuotationItems { get; set; }
+        public DbSet<QuotationAllocation> QuotationAllocations { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         { 
             base.OnModelCreating(modelBuilder);
@@ -197,6 +202,42 @@ namespace DigitalAgriculturalMarketPlace.Data
             modelBuilder.Entity<OrderStatusHistory>().HasIndex(x => new { x.OrderId, x.ChangedAt });
             modelBuilder.Entity<OrderStatusHistory>().HasOne(x => x.Order).WithMany(o => o.StatusHistory).HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<OrderStatusHistory>().HasOne(x => x.ChangedByUser).WithMany().HasForeignKey(x => x.ChangedByUserId).OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Rfq>().Property(x=>x.RowVersion).IsRowVersion();
+            modelBuilder.Entity<Rfq>().HasIndex(x=>x.RfqNumber).IsUnique();
+            modelBuilder.Entity<Rfq>().HasIndex(x=>new{x.BuyerId,x.Status});
+            modelBuilder.Entity<Rfq>().HasOne(x=>x.Buyer).WithMany().HasForeignKey(x=>x.BuyerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Rfq>().ToTable(t=>t.HasCheckConstraint("CK_Rfqs_Status","[Status] IN ('Draft','Open','PartiallyFulfilled','Fulfilled','Closed','Cancelled')"));
+
+            modelBuilder.Entity<RfqItem>().Property(x=>x.RowVersion).IsRowVersion();
+            modelBuilder.Entity<RfqItem>().HasIndex(x=>new{x.RfqId,x.CatalogProductId,x.UnitOfMeasureId}).IsUnique();
+            modelBuilder.Entity<RfqItem>().HasOne(x=>x.Rfq).WithMany(x=>x.Items).HasForeignKey(x=>x.RfqId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<RfqItem>().HasOne(x=>x.CatalogProduct).WithMany().HasForeignKey(x=>x.CatalogProductId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<RfqItem>().HasOne(x=>x.UnitOfMeasure).WithMany().HasForeignKey(x=>x.UnitOfMeasureId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<RfqItem>().ToTable(t=>{t.HasCheckConstraint("CK_RfqItems_RequestedQuantity","[RequestedQuantity] > 0");t.HasCheckConstraint("CK_RfqItems_AcceptedQuantity","[AcceptedQuantity] >= 0 AND [AcceptedQuantity] <= [RequestedQuantity]");});
+
+            modelBuilder.Entity<Quotation>().Property(x=>x.RowVersion).IsRowVersion();
+            modelBuilder.Entity<Quotation>().HasIndex(x=>x.QuotationNumber).IsUnique();
+            modelBuilder.Entity<Quotation>().HasIndex(x=>new{x.RfqId,x.SellerId}).IsUnique();
+            modelBuilder.Entity<Quotation>().HasOne(x=>x.Rfq).WithMany(x=>x.Quotations).HasForeignKey(x=>x.RfqId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Quotation>().HasOne(x=>x.Seller).WithMany().HasForeignKey(x=>x.SellerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Quotation>().ToTable(t=>t.HasCheckConstraint("CK_Quotations_Status","[Status] IN ('Draft','Submitted','PartiallyAccepted','Accepted','Rejected','Withdrawn','Expired')"));
+
+            modelBuilder.Entity<QuotationItem>().Property(x=>x.RowVersion).IsRowVersion();
+            modelBuilder.Entity<QuotationItem>().HasIndex(x=>new{x.QuotationId,x.RfqItemId}).IsUnique();
+            modelBuilder.Entity<QuotationItem>().HasOne(x=>x.Quotation).WithMany(x=>x.Items).HasForeignKey(x=>x.QuotationId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<QuotationItem>().HasOne(x=>x.RfqItem).WithMany(x=>x.QuotationItems).HasForeignKey(x=>x.RfqItemId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<QuotationItem>().HasOne(x=>x.Product).WithMany().HasForeignKey(x=>x.ProductId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<QuotationItem>().ToTable(t=>{t.HasCheckConstraint("CK_QuotationItems_OfferedQuantity","[OfferedQuantity] > 0");t.HasCheckConstraint("CK_QuotationItems_AcceptedQuantity","[AcceptedQuantity] >= 0 AND [AcceptedQuantity] <= [OfferedQuantity]");t.HasCheckConstraint("CK_QuotationItems_UnitPrice","[UnitPrice] > 0");});
+
+            modelBuilder.Entity<QuotationAllocation>().HasIndex(x=>x.OperationKey).IsUnique();
+            modelBuilder.Entity<QuotationAllocation>().HasIndex(x=>new{x.RfqItemId,x.CreatedAt});
+            modelBuilder.Entity<QuotationAllocation>().HasOne(x=>x.QuotationItem).WithMany(x=>x.Allocations).HasForeignKey(x=>x.QuotationItemId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<QuotationAllocation>().HasOne(x=>x.RfqItem).WithMany(x=>x.Allocations).HasForeignKey(x=>x.RfqItemId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<QuotationAllocation>().HasOne(x=>x.Buyer).WithMany().HasForeignKey(x=>x.BuyerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<QuotationAllocation>().HasOne(x=>x.Seller).WithMany().HasForeignKey(x=>x.SellerId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<QuotationAllocation>().HasOne(x=>x.Order).WithMany().HasForeignKey(x=>x.OrderId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<QuotationAllocation>().ToTable(t=>{t.HasCheckConstraint("CK_QuotationAllocations_Quantity","[AcceptedQuantity] > 0");t.HasCheckConstraint("CK_QuotationAllocations_Price","[AcceptedUnitPrice] > 0");});
 
             modelBuilder.Entity<Review>()
         .HasOne(r => r.Consumer)
