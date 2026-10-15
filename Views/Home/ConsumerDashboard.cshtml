@@ -35,7 +35,7 @@
                                         </div>
                                         <partial name="_OrderStatus" model="order.Status" />
                                     </div>
-                                    <div class="d-flex align-items-center justify-content-between gap-3 mt-3"><span class="product-meta">@order.Quantity unit(s) · Rs. @order.TotalPrice.ToString("N2")</span><a class="btn btn-sm btn-outline-primary" asp-controller="Orders" asp-action="ConsumerOrderDetails" asp-route-id="@order.Id">Track order</a></div>
+                                    <div class="d-flex align-items-center justify-content-between gap-3 mt-3"><span class="product-meta">@order.Quantity.ToString("0.###") unit(s) · Rs. @order.TotalPrice.ToString("N2")</span><a class="btn btn-sm btn-outline-primary" asp-controller="Orders" asp-action="ConsumerOrderDetails" asp-route-id="@order.Id">Track order</a></div>
                                 </article>
                             }
                         </div>

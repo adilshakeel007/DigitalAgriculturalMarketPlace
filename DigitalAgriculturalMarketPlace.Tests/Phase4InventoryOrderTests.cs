@@ -81,14 +81,39 @@ public sealed class Phase4InventoryOrderTests : IClassFixture<SqlServerTestDatab
         await using var db=_database.CreateContext(); var (seller,_,p)=await Seed(db,4); var service=new InventoryService(db); var key="adjust-"+Guid.NewGuid(); Assert.True((await service.AdjustAsync(p.Id,seller.Id,9,"Counted stock",key)).Succeeded); Assert.True((await service.AdjustAsync(p.Id,seller.Id,9,"Counted stock",key)).Succeeded); Assert.Equal(1,await db.InventoryMovements.CountAsync(m=>m.OperationKey==key)); Assert.Equal(9,(await db.Products.FindAsync(p.Id))!.Quantity);
     }
 
-    [Fact] public async Task FractionalOrder_IsExplicitlyRejectedAtLegacyBoundary()
+    [Fact] public async Task FractionalOrder_ReservesExactQuantityWithoutRounding()
     {
-        await using var db=_database.CreateContext(); var (_,buyer,p)=await Seed(db,4); var result=await Workflow(db).PlaceAsync(buyer.Id,p.Id,1.5m,Guid.NewGuid().ToString()); Assert.False(result.Succeeded); Assert.Contains("Fractional",result.Message);
+        await using var db=_database.CreateContext(); var (_,buyer,p)=await Seed(db,4); var result=await Workflow(db).PlaceAsync(buyer.Id,p.Id,1.5m,Guid.NewGuid().ToString()); Assert.True(result.Succeeded); var order=await db.Orders.FindAsync(result.OrderId); Assert.Equal(1.5m,order!.Quantity); Assert.Equal(2.5m,(await db.Products.FindAsync(p.Id))!.AvailableQuantity); Assert.Equal(1.5m,await db.InventoryReservations.Where(r=>r.OrderItem!.OrderId==order.Id).Select(r=>r.Quantity).SingleAsync());
     }
 
     [Fact] public async Task DifferentSeller_CannotTransitionOrder()
     {
         await using var db=_database.CreateContext(); var (_,buyer,p)=await Seed(db,4); var other=await AddUser(db,UserRoles.Farmer); var w=Workflow(db); var placed=await w.PlaceAsync(buyer.Id,p.Id,1,Guid.NewGuid().ToString()); Assert.False((await w.TransitionAsync(placed.OrderId!.Value,other.Id,true,"Confirmed",null,Guid.NewGuid().ToString())).Succeeded);
+    }
+
+    [Fact] public async Task WholeOnlyUnit_RejectsFractionalOrder()
+    {
+        await using var db=_database.CreateContext();var(_,buyer,p)=await Seed(db,4);p.UnitOfMeasureId=3;await db.SaveChangesAsync();var result=await Workflow(db).PlaceAsync(buyer.Id,p.Id,1.5m,Guid.NewGuid().ToString());Assert.False(result.Succeeded);Assert.Contains("whole",result.Message,StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact] public async Task QuantityBeyondUnitPrecision_IsRejected()
+    {
+        await using var db=_database.CreateContext();var(_,buyer,p)=await Seed(db,4);var result=await Workflow(db).PlaceAsync(buyer.Id,p.Id,1.2345m,Guid.NewGuid().ToString());Assert.False(result.Succeeded);Assert.Contains("3 decimal",result.Message);
+    }
+
+    [Fact] public async Task FractionalCancellation_RestoresExactAvailableQuantityOnce()
+    {
+        await using var db=_database.CreateContext();var(_,buyer,p)=await Seed(db,4);var w=Workflow(db);var placed=await w.PlaceAsync(buyer.Id,p.Id,1.125m,Guid.NewGuid().ToString());var key="fractional-cancel-"+Guid.NewGuid();Assert.True((await w.TransitionAsync(placed.OrderId!.Value,buyer.Id,false,"Cancelled","Changed mind",key)).Succeeded);Assert.True((await w.TransitionAsync(placed.OrderId.Value,buyer.Id,false,"Cancelled","Changed mind",key)).Succeeded);var saved=await db.Products.FindAsync(p.Id);Assert.Equal(4m,saved!.AvailableQuantity);Assert.Equal(0m,saved.ReservedQuantity);
+    }
+
+    [Fact] public async Task DuplicateOrderSubmission_CreatesOneSellerNotification()
+    {
+        await using var db=_database.CreateContext();var(seller,buyer,p)=await Seed(db,5);var w=Workflow(db);var key="notify-"+Guid.NewGuid();var first=await w.PlaceAsync(buyer.Id,p.Id,1.25m,key);var repeat=await w.PlaceAsync(buyer.Id,p.Id,1.25m,key);Assert.Equal(first.OrderId,repeat.OrderId);Assert.Equal(1,await db.Notifications.CountAsync(n=>n.UserId==seller.Id&&n.OperationKey=="notify:order-created:"+key));
+    }
+
+    [Fact] public async Task FractionalInventoryAdjustment_IsExactAndLedgerBacked()
+    {
+        await using var db=_database.CreateContext();var(seller,_,p)=await Seed(db,4);var service=new InventoryService(db);var key="fractional-adjust-"+Guid.NewGuid();Assert.True((await service.AdjustAsync(p.Id,seller.Id,3.375m,"Weighed stock",key)).Succeeded);var saved=await db.Products.FindAsync(p.Id);Assert.Equal(3.375m,saved!.AvailableQuantity);Assert.Equal(4,saved.Quantity);Assert.Equal(-0.625m,(await db.InventoryMovements.SingleAsync(m=>m.OperationKey==key)).AvailableDelta);
     }
 
     private static OrderWorkflowService Workflow(ApplicationDbContext db)=>new(db,new InventoryService(db));

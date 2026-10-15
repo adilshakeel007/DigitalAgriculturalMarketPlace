@@ -17,6 +17,8 @@ public class InventoryService
         var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == productId && p.FarmerId == sellerId);
         if (product is null) return WorkflowResult.Fail("Listing was not found or does not belong to you.");
         if (product.UnitOfMeasureId is null) return WorkflowResult.Fail("Map a unit of measure before adjusting this legacy listing.");
+        var unit = await _db.UnitsOfMeasure.FindAsync(product.UnitOfMeasureId.Value);
+        if (unit is null || !QuantityRules.IsValid(newAvailable, unit.DecimalPlaces)) return WorkflowResult.Fail(QuantityRules.Message(unit?.Code, unit?.DecimalPlaces ?? 0));
         if (await _db.InventoryMovements.AnyAsync(x => x.OperationKey == operationKey)) return WorkflowResult.Ok("This adjustment was already applied.");
         var before = product.AvailableQuantity ?? product.Quantity;
         product.AvailableQuantity = newAvailable;
@@ -34,7 +36,9 @@ public class InventoryService
     internal static void SyncLegacyQuantity(Product product)
     {
         var available = product.AvailableQuantity ?? product.Quantity;
-        if (available != decimal.Truncate(available) || available > int.MaxValue) throw new InvalidOperationException("Legacy quantity cannot represent this fractional value.");
-        product.Quantity = decimal.ToInt32(available);
+        // Quantity is retained for legacy compatibility; AvailableQuantity is authoritative.
+        // Mirror only values the old integer column can represent without rounding or truncation.
+        if (available == decimal.Truncate(available) && available <= int.MaxValue)
+            product.Quantity = decimal.ToInt32(available);
     }
 }

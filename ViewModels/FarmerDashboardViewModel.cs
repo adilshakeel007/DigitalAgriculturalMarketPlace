@@ -10,7 +10,7 @@ namespace DigitalAgriculturalMarketplace.ViewModels
 
         public int LowStockProducts { get; set; }
 
-        public int TotalStockUnits { get; set; }
+        public decimal TotalStockUnits { get; set; }
 
         public int PendingOrders { get; set; }
 

@@ -36,14 +36,14 @@
                 {
                     <div class="table-responsive border-0 rounded-0 shadow-none"><table class="table table-hover">
                         <thead><tr><th>Order</th><th>Product</th><th>Customer</th><th>Total</th><th>Status</th><th></th></tr></thead>
-                        <tbody>@foreach (var order in Model.RecentOrders) { <tr><td>#@order.Id</td><td><strong>@order.Product?.Name</strong><div class="product-meta">Qty @order.Quantity</div></td><td>@order.Consumer?.Name</td><td>Rs. @order.TotalPrice.ToString("N2")</td><td><partial name="_OrderStatus" model="order.Status" /></td><td><a class="btn btn-sm btn-secondary" asp-controller="Orders" asp-action="FarmerOrderDetails" asp-route-id="@order.Id">Manage</a></td></tr> }</tbody>
+                        <tbody>@foreach (var order in Model.RecentOrders) { <tr><td>#@order.Id</td><td><strong>@order.Product?.Name</strong><div class="product-meta">Qty @order.Quantity.ToString("0.###")</div></td><td>@order.Consumer?.Name</td><td>Rs. @order.TotalPrice.ToString("N2")</td><td><partial name="_OrderStatus" model="order.Status" /></td><td><a class="btn btn-sm btn-secondary" asp-controller="Orders" asp-action="FarmerOrderDetails" asp-route-id="@order.Id">Manage</a></td></tr> }</tbody>
                     </table></div>
                 }
             </section>
 
             <div class="d-grid gap-3">
                 <section class="panel" aria-labelledby="inventoryTitle">
-                    <div class="panel-header"><div><h2 id="inventoryTitle">Inventory</h2><p>@Model.TotalStockUnits active units listed</p></div><a class="panel-link" asp-controller="Products" asp-action="Index">Manage</a></div>
+                    <div class="panel-header"><div><h2 id="inventoryTitle">Inventory</h2><p>@Model.TotalStockUnits.ToString("0.###") active units listed</p></div><a class="panel-link" asp-controller="Products" asp-action="Index">Manage</a></div>
                     <div class="panel-body pt-0 pb-0">
                         @if (!Model.InventoryOverview.Any()) { <p class="text-muted small py-3 mb-0">No products added yet.</p> }
                         @foreach (var product in Model.InventoryOverview)

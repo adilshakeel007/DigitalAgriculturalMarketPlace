@@ -12,6 +12,8 @@ namespace DigitalAgriculturalMarketplace.ViewModels
         public int PendingSalesCount { get; set; }
         public int UnreadMessages { get; set; }
         public int UnreadNotifications { get; set; }
+        public int OpenRfqCount { get; set; }
+        public int SubmittedQuotationCount { get; set; }
         public SellerProfile? SellerProfile { get; set; }
         public List<Order> RecentPurchases { get; set; } = new();
         public List<Order> RecentSales { get; set; } = new();

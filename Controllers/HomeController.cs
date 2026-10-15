@@ -54,16 +54,16 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     .CountAsync(p =>
                         p.FarmerId == farmerId.Value &&
                         p.IsActive &&
-                        p.Quantity <= 5
+                        (p.AvailableQuantity ?? p.Quantity) <= 5
                     );
 
-            int totalStockUnits =
+            decimal totalStockUnits =
                 await _context.Products
                     .Where(p =>
                         p.FarmerId == farmerId.Value &&
                         p.IsActive
                     )
-                    .SumAsync(p => (int?)p.Quantity)
+                    .SumAsync(p => (decimal?)(p.AvailableQuantity ?? p.Quantity))
                 ?? 0;
 
             int pendingOrders =
@@ -128,7 +128,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             var inventoryOverview =
                 await _context.Products
                     .Where(p => p.FarmerId == farmerId.Value)
-                    .OrderBy(p => p.Quantity)
+                    .OrderBy(p => p.AvailableQuantity ?? p.Quantity)
                     .ThenBy(p => p.Name)
                     .Take(6)
                     .ToListAsync();
@@ -292,6 +292,8 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     m.ReceiverId == userId && !m.IsRead),
                 UnreadNotifications = await _context.Notifications.CountAsync(n =>
                     n.UserId == userId && !n.IsRead),
+                OpenRfqCount = await _context.Rfqs.CountAsync(r => r.BuyerId == userId && (r.Status == "Open" || r.Status == "PartiallyFulfilled")),
+                SubmittedQuotationCount = await _context.Quotations.CountAsync(q => q.SellerId == userId && (q.Status == "Submitted" || q.Status == "PartiallyAccepted")),
                 SellerProfile = await _context.SellerProfiles
                     .AsNoTracking()
                     .FirstOrDefaultAsync(s => s.UserId == userId),

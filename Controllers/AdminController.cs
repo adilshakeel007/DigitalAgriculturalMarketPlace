@@ -191,7 +191,8 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             string? status)
         {
             IQueryable<Product> productsQuery = _context.Products
-                .Include(p => p.Farmer);
+                .Include(p => p.Farmer)
+                .Include(p => p.UnitOfMeasure);
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {

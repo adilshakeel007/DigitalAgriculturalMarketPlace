@@ -14,7 +14,6 @@ public class OrderWorkflowService
     public async Task<WorkflowResult> PlaceAsync(int buyerId, int productId, decimal quantity, string operationKey)
     {
         if (quantity <= 0) return WorkflowResult.Fail("Quantity must be greater than zero.");
-        if (quantity != decimal.Truncate(quantity)) return WorkflowResult.Fail("Fractional ordering is not enabled while the legacy integer order field remains authoritative.");
         await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
         var prior = await _db.InventoryReservations.Include(r => r.OrderItem).FirstOrDefaultAsync(r => r.OperationKey == $"reserve:{operationKey}");
         if (prior?.OrderItem is not null) return WorkflowResult.Ok("This order was already submitted.", prior.OrderItem.OrderId);
@@ -23,10 +22,11 @@ public class OrderWorkflowService
         if (product.FarmerId == buyerId) return WorkflowResult.Fail("You cannot purchase your own listing.");
         var available = product.AvailableQuantity ?? product.Quantity;
         if (quantity < (product.MinimumOrderQuantity ?? 0) || quantity > available) return WorkflowResult.Fail($"Only {available:0.###} {product.UnitOfMeasure?.Code ?? "units"} are available.");
-        if ((product.UnitOfMeasure?.DecimalPlaces ?? 0) == 0 && quantity != decimal.Truncate(quantity)) return WorkflowResult.Fail("This unit only supports whole quantities.");
+        if (!QuantityRules.IsValid(quantity, product.UnitOfMeasure?.DecimalPlaces ?? 0))
+            return WorkflowResult.Fail(QuantityRules.Message(product.UnitOfMeasure?.Code, product.UnitOfMeasure?.DecimalPlaces ?? 0));
 
         var now = DateTime.UtcNow;
-        var order = new Order { ConsumerId=buyerId, ProductId=product.Id, SellerId=product.FarmerId, Quantity=decimal.ToInt32(quantity), TotalPrice=decimal.Round(product.PricePerUnit*quantity,2), Subtotal=decimal.Round(product.PricePerUnit*quantity,2), Status="Pending", OrderDate=now, UpdatedAt=now };
+        var order = new Order { ConsumerId=buyerId, ProductId=product.Id, SellerId=product.FarmerId, Quantity=quantity, TotalPrice=decimal.Round(product.PricePerUnit*quantity,2), Subtotal=decimal.Round(product.PricePerUnit*quantity,2), Status="Pending", OrderDate=now, UpdatedAt=now };
         _db.Orders.Add(order); await _db.SaveChangesAsync();
         order.OrderNumber = $"AG-{now:yyyyMMdd}-{order.Id:D6}";
         var item = new OrderItem { OrderId=order.Id, ProductId=product.Id, ProductNameSnapshot=product.Name, UnitNameSnapshot=product.UnitOfMeasure?.Name, Quantity=quantity, UnitPrice=product.PricePerUnit, LineTotal=order.TotalPrice, SellerId=product.FarmerId };
@@ -35,6 +35,7 @@ public class OrderWorkflowService
         _db.InventoryReservations.Add(new InventoryReservation { ProductId=product.Id, OrderItemId=item.Id, Quantity=quantity, Status="Active", ReservedAt=now, OperationKey=$"reserve:{operationKey}" });
         _inventory.AddMovement(product,"ReservationCreated",-quantity,quantity,buyerId,"Order",order.Id,null,$"movement:reserve:{operationKey}");
         _db.OrderStatusHistory.Add(new OrderStatusHistory { OrderId=order.Id, ToStatus="Pending", ChangedByUserId=buyerId, ChangedAt=now, OperationKey=$"status:create:{operationKey}" });
+        AddNotification(product.FarmerId,"New order",$"A new order for {quantity:0.###} {product.UnitOfMeasure?.Code ?? "unit"} of {product.Name} is awaiting your review.","Order",order.Id,$"notify:order-created:{operationKey}");
         try { await _db.SaveChangesAsync(); await tx.CommitAsync(); return WorkflowResult.Ok("Your order has been placed successfully.",order.Id); }
         catch (DbUpdateException) { return WorkflowResult.Fail("The order could not be created. It may already have been processed; refresh before retrying."); }
     }
@@ -69,6 +70,14 @@ public class OrderWorkflowService
         else if(target=="Completed") { order.Product.ReservedQuantity-=q; reservation.Status="Consumed"; reservation.ConsumedAt=now; order.CompletedAt=now; _inventory.AddMovement(order.Product,"OrderFulfilled",0,-q,actorId,"Order",order.Id,reason,$"movement:{operationKey}"); }
         order.Status=target; order.UpdatedAt=now;
         _db.OrderStatusHistory.Add(new OrderStatusHistory { OrderId=order.Id,FromStatus=from,ToStatus=target,ChangedByUserId=actorId,Reason=reason,ChangedAt=now,OperationKey=operationKey });
+        var recipient = sellerAction ? order.ConsumerId : order.Product.FarmerId;
+        AddNotification(recipient,$"Order {target}",$"Order {order.OrderNumber ?? $"#{order.Id}"} is now {target.ToLowerInvariant()}.","Order",order.Id,$"notify:order-transition:{operationKey}");
         try { await _db.SaveChangesAsync(); await tx.CommitAsync(); return WorkflowResult.Ok("Order status updated successfully.",order.Id); } catch(DbUpdateConcurrencyException) { return WorkflowResult.Fail("The order changed concurrently. Refresh and try again."); }
+    }
+
+    private void AddNotification(int userId,string title,string message,string type,int relatedId,string operationKey)
+    {
+        if (_db.Notifications.Local.Any(n=>n.OperationKey==operationKey)) return;
+        _db.Notifications.Add(new Notification{UserId=userId,Title=title,Message=message,Type=type,RelatedId=relatedId,OperationKey=operationKey,CreatedAt=DateTime.UtcNow});
     }
 }

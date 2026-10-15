@@ -30,6 +30,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
         {
             int? buyerId = HttpContext.Session.GetInt32("UserId");
             Product? product = await _context.Products
+                .Include(p => p.UnitOfMeasure)
                 .FirstOrDefaultAsync(p =>
                     p.Id == productId &&
                     p.IsActive &&
@@ -49,6 +50,10 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                     ProductName = product.Name,
                     PricePerUnit = product.PricePerUnit,
                     AvailableQuantity = product.AvailableQuantity ?? product.Quantity,
+                    UnitName = product.UnitOfMeasure?.Name,
+                    UnitCode = product.UnitOfMeasure?.Code,
+                    DecimalPlaces = product.UnitOfMeasure?.DecimalPlaces ?? 0,
+                    MinimumOrderQuantity = product.MinimumOrderQuantity ?? (product.UnitOfMeasure?.DecimalPlaces == 0 ? 1 : 0.001m),
                     Quantity = 1
                 };
 
@@ -89,7 +94,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
                 ModelState.AddModelError("", "You cannot purchase your own listing.");
                 model.ProductName = product.Name;
                 model.PricePerUnit = product.PricePerUnit;
-                model.AvailableQuantity = product.Quantity;
+                model.AvailableQuantity = product.AvailableQuantity ?? product.Quantity;
                 return View(model);
             }
 
@@ -98,6 +103,9 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             model.PricePerUnit = product.PricePerUnit;
             model.AvailableQuantity = product.AvailableQuantity ?? product.Quantity;
             model.UnitName = product.UnitOfMeasure?.Name;
+            model.UnitCode = product.UnitOfMeasure?.Code;
+            model.DecimalPlaces = product.UnitOfMeasure?.DecimalPlaces ?? 0;
+            model.MinimumOrderQuantity = product.MinimumOrderQuantity ?? (model.DecimalPlaces == 0 ? 1 : 0.001m);
 
             if (!product.IsActive)
             {
@@ -116,13 +124,6 @@ namespace DigitalAgriculturalMarketPlace.Controllers
 
             var result = await _workflow.PlaceAsync(consumerId.Value, product.Id, model.Quantity, model.OperationKey);
             if (!result.Succeeded) { ModelState.AddModelError("", result.Message); return View(model); }
-            await CreateNotification(
-    product.FarmerId,
-    "New Order",
-    $"A new order has been placed for {product.Name}.",
-    "Order",
-    result.OrderId
-);
 
             TempData["SuccessMessage"] =
                 "Your order has been placed successfully.";
@@ -247,36 +248,6 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             var operationKey=$"seller:{id}:{status.ToLowerInvariant()}";
             var result=await _workflow.TransitionAsync(id,farmerId.Value,true,status,string.IsNullOrWhiteSpace(reason)?null:reason.Trim(),operationKey);
             if(!result.Succeeded) { TempData["ErrorMessage"]=result.Message; return RedirectToAction("FarmerOrderDetails",new{id}); }
-            if (status == "Confirmed")
-            {
-                await CreateNotification(
-                    (await _context.Orders.FindAsync(id))!.ConsumerId,
-                    "Order Confirmed",
-                    $"Your order #{id} has been confirmed.",
-                    "Order",
-                    id
-                );
-            }
-            if (status == "Completed")
-            {
-                await CreateNotification(
-                    (await _context.Orders.FindAsync(id))!.ConsumerId,
-                    "Order Completed",
-                    $"Your order #{id} has been completed.",
-                    "Order",
-                    id
-                );
-            }
-            if (status == "Cancelled")
-            {
-                await CreateNotification(
-                    (await _context.Orders.FindAsync(id))!.ConsumerId,
-                    "Order Cancelled",
-                    $"Your order #{id} has been cancelled.",
-                    "Order",
-                    id
-                );
-            }
 
             TempData["SuccessMessage"] =
                 "Order status updated successfully.";
@@ -393,16 +364,6 @@ namespace DigitalAgriculturalMarketPlace.Controllers
 
             var result=await _workflow.TransitionAsync(id,consumerId.Value,false,"Cancelled",string.IsNullOrWhiteSpace(cancellationReason)?"Cancelled by buyer":cancellationReason.Trim(),$"buyer:{id}:cancel");
             if(!result.Succeeded) { TempData["ErrorMessage"]=result.Message; return RedirectToAction("ConsumerOrderDetails",new{id}); }
-            if (order.Product != null)
-            {
-                await CreateNotification(
-                    order.Product.FarmerId,
-                    "Order Cancelled by Consumer",
-                    $"Order #{order.Id} was cancelled by the Consumer.",
-                    "Order",
-                    order.Id
-                );
-            }
 
             TempData["SuccessMessage"] =
                 "Order cancelled successfully.";
@@ -413,29 +374,6 @@ namespace DigitalAgriculturalMarketPlace.Controllers
             );
         }
 
-        private async Task CreateNotification(
-        int userId,
-        string title,
-        string message,
-        string type,
-        int? relatedId = null)
-        {
-            Notification notification =
-                new Notification
-                {
-                    UserId = userId,
-                    Title = title,
-                    Message = message,
-                    Type = type,
-                    RelatedId = relatedId,
-                    IsRead = false,
-                    CreatedAt = DateTime.Now
-                };
-
-            _context.Notifications.Add(notification);
-
-            await _context.SaveChangesAsync();
-        }
     }
 }
 

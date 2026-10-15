@@ -17,7 +17,8 @@
             <h1 class="h2">@Model.Name</h1>
             <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
                 <span class="price-line"><span class="product-price">Rs. @Model.PricePerUnit.ToString("N2")</span><span class="price-unit">per unit</span></span>
-                <span class="stock-label @(Model.Quantity <= 5 ? "low" : string.Empty)">@Model.Quantity unit(s) available</span>
+                @{ var available = Model.AvailableQuantity ?? Model.Quantity; var unit = Model.UnitOfMeasure?.Code ?? "unit"; }
+                <span class="stock-label @(available <= 5 ? "low" : string.Empty)">@available.ToString("0.###") @unit available</span>
             </div>
 
             <p>@(string.IsNullOrWhiteSpace(Model.Description) ? "The farmer has not added a description for this product yet." : Model.Description)</p>

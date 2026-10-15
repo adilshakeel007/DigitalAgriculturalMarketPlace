@@ -15,8 +15,9 @@ namespace DigitalAgriculturalMarketplace.Models
         public int ProductId { get; set; }
 
         [Required]
-        [Range(1, 1000000)]
-        public int Quantity { get; set; }
+        [Range(typeof(decimal), "0.001", "1000000")]
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal Quantity { get; set; }
 
         [Column(TypeName = "decimal(10,2)")]
         public decimal TotalPrice { get; set; }

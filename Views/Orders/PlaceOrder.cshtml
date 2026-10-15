@@ -7,7 +7,7 @@
 
     <div class="card"><div class="card-body p-4">
         <div class="d-flex justify-content-between gap-3 pb-3 mb-3 border-bottom">
-            <div><h2 class="h5 mb-1">@Model.ProductName</h2><span class="product-meta">@Model.AvailableQuantity unit(s) currently available</span></div>
+            <div><h2 class="h5 mb-1">@Model.ProductName</h2><span class="product-meta">@Model.AvailableQuantity.ToString("0.###") @(Model.UnitCode ?? Model.UnitName ?? "unit") currently available</span></div>
             <span class="price-line text-nowrap"><strong class="product-price">Rs. @Model.PricePerUnit.ToString("N2")</strong><span class="price-unit">/ unit</span></span>
         </div>
 
@@ -20,7 +20,7 @@
                 <label asp-for="Quantity" class="form-label d-block">Quantity</label>
                 <div class="quantity-stepper">
                     <button type="button" data-quantity-decrease aria-label="Decrease quantity">&minus;</button>
-                    <input asp-for="Quantity" min="1" max="@Model.AvailableQuantity" inputmode="numeric" data-quantity-input />
+                    <input asp-for="Quantity" min="@Model.MinimumOrderQuantity" step="@(Model.DecimalPlaces == 0 ? "1" : $"0.{new string('0', Model.DecimalPlaces - 1)}1")" max="@Model.AvailableQuantity" inputmode="decimal" data-quantity-input />
                     <button type="button" data-quantity-increase aria-label="Increase quantity">+</button>
                 </div>
                 <span asp-validation-for="Quantity" class="text-danger small d-block mt-1"></span>

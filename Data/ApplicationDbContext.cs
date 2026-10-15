@@ -174,6 +174,7 @@ namespace DigitalAgriculturalMarketPlace.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Order>().Property(o => o.RowVersion).IsRowVersion();
+            modelBuilder.Entity<Order>().ToTable(t => t.HasCheckConstraint("CK_Orders_Quantity_Positive", "[Quantity] > 0"));
             modelBuilder.Entity<Order>().HasIndex(o => o.OrderNumber).IsUnique().HasFilter("[OrderNumber] IS NOT NULL");
             modelBuilder.Entity<Order>().HasIndex(o => new { o.SellerId, o.Status });
             modelBuilder.Entity<Order>().HasOne(o => o.Seller).WithMany().HasForeignKey(o => o.SellerId).OnDelete(DeleteBehavior.Restrict);
@@ -274,6 +275,11 @@ namespace DigitalAgriculturalMarketPlace.Data
     .WithMany(u => u.Notifications)
     .HasForeignKey(n => n.UserId)
     .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.OperationKey)
+                .IsUnique()
+                .HasFilter("[OperationKey] IS NOT NULL");
 
             modelBuilder.Entity<Review>()
     .HasIndex(r => new

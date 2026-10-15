@@ -25,9 +25,10 @@ namespace DigitalAgriculturalMarketplace.Controllers
         {
             var products = _context.Products
                 .Include(p => p.Farmer)
+                .Include(p => p.UnitOfMeasure)
                 .Where(p =>
                     p.IsActive &&
-                    p.Quantity > 0
+                    (p.AvailableQuantity ?? p.Quantity) > 0
                 )
                 .AsQueryable();
 
@@ -151,12 +152,13 @@ namespace DigitalAgriculturalMarketplace.Controllers
             Product? product =
     await _context.Products
         .Include(p => p.Farmer)
+        .Include(p => p.UnitOfMeasure)
         .Include(p => p.Reviews)
             .ThenInclude(r => r.Consumer)
         .FirstOrDefaultAsync(p =>
             p.Id == id &&
             p.IsActive &&
-            p.Quantity > 0
+            (p.AvailableQuantity ?? p.Quantity) > 0
         );
 
             if (product == null)

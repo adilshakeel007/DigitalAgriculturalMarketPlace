@@ -7,6 +7,8 @@
         <div class="d-flex gap-2"><a class="btn btn-primary" asp-controller="Marketplace" asp-action="Index">Browse marketplace</a><a class="btn btn-secondary" asp-controller="Products" asp-action="Create">Create listing</a></div>
     </div>
 
+    <div class="d-flex flex-wrap gap-2 mb-4"><a class="btn btn-outline-primary" asp-controller="Rfqs" asp-action="Index">My RFQs (@Model.OpenRfqCount open)</a><a class="btn btn-outline-primary" asp-controller="Rfqs" asp-action="Browse">Seller opportunities</a><a class="btn btn-outline-primary" asp-controller="Rfqs" asp-action="MyQuotations">My quotations (@Model.SubmittedQuotationCount active)</a></div>
+
     <div class="kpi-grid mb-4">
         <div class="kpi-card"><span>Purchases</span><strong>@Model.PurchaseCount</strong><small>@Model.ActivePurchaseCount active</small></div>
         <div class="kpi-card"><span>Listings</span><strong>@Model.ListingCount</strong><small>@Model.ActiveListingCount active</small></div>

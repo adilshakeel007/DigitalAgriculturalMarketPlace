@@ -291,6 +291,10 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<string>("OperationKey")
+                        .HasMaxLength(180)
+                        .HasColumnType("nvarchar(180)");
+
                     b.Property<int?>("RelatedId")
                         .HasColumnType("int");
 
@@ -307,6 +311,10 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OperationKey")
+                        .IsUnique()
+                        .HasFilter("[OperationKey] IS NOT NULL");
 
                     b.HasIndex("UserId");
 
@@ -344,8 +352,8 @@ namespace DigitalAgriculturalMarketPlace.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -382,7 +390,10 @@ namespace DigitalAgriculturalMarketPlace.Migrations
 
                     b.HasIndex("SellerId", "Status");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", t =>
+                        {
+                            t.HasCheckConstraint("CK_Orders_Quantity_Positive", "[Quantity] > 0");
+                        });
                 });
 
             modelBuilder.Entity("DigitalAgriculturalMarketplace.Models.OrderItem", b =>
