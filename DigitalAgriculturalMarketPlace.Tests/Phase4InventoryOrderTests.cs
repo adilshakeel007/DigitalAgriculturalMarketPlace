@@ -116,6 +116,15 @@ public sealed class Phase4InventoryOrderTests : IClassFixture<SqlServerTestDatab
         await using var db=_database.CreateContext();var(seller,_,p)=await Seed(db,4);var service=new InventoryService(db);var key="fractional-adjust-"+Guid.NewGuid();Assert.True((await service.AdjustAsync(p.Id,seller.Id,3.375m,"Weighed stock",key)).Succeeded);var saved=await db.Products.FindAsync(p.Id);Assert.Equal(3.375m,saved!.AvailableQuantity);Assert.Equal(4,saved.Quantity);Assert.Equal(-0.625m,(await db.InventoryMovements.SingleAsync(m=>m.OperationKey==key)).AvailableDelta);
     }
 
+    [Fact] public async Task ConcurrentPurchases_CannotOversellOrDoubleReserve()
+    {
+        int buyer1Id,buyer2Id,productId;
+        await using(var seed=_database.CreateContext()){var(_,buyer1,p)=await Seed(seed,10);var buyer2=await AddUser(seed,UserRoles.Consumer);buyer1Id=buyer1.Id;buyer2Id=buyer2.Id;productId=p.Id;}
+        async Task<bool> Place(int buyerId){try{await using var db=_database.CreateContext();return(await Workflow(db).PlaceAsync(buyerId,productId,6,"concurrent-order-"+Guid.NewGuid())).Succeeded;}catch{return false;}}
+        var results=await Task.WhenAll(Task.Run(()=>Place(buyer1Id)),Task.Run(()=>Place(buyer2Id)));
+        await using var check=_database.CreateContext();var product=await check.Products.FindAsync(productId);Assert.Equal(1,results.Count(x=>x));Assert.Equal(4m,product!.AvailableQuantity);Assert.Equal(6m,product.ReservedQuantity);Assert.Equal(1,await check.InventoryReservations.CountAsync(r=>r.ProductId==productId&&r.Status=="Active"));
+    }
+
     private static OrderWorkflowService Workflow(ApplicationDbContext db)=>new(db,new InventoryService(db));
     private static async Task<(User Seller,User Buyer,Product Product)> Seed(ApplicationDbContext db,int quantity)
     {

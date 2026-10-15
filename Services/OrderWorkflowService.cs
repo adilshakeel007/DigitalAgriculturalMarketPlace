@@ -72,7 +72,7 @@ public class OrderWorkflowService
         _db.OrderStatusHistory.Add(new OrderStatusHistory { OrderId=order.Id,FromStatus=from,ToStatus=target,ChangedByUserId=actorId,Reason=reason,ChangedAt=now,OperationKey=operationKey });
         var recipient = sellerAction ? order.ConsumerId : order.Product.FarmerId;
         AddNotification(recipient,$"Order {target}",$"Order {order.OrderNumber ?? $"#{order.Id}"} is now {target.ToLowerInvariant()}.","Order",order.Id,$"notify:order-transition:{operationKey}");
-        try { await _db.SaveChangesAsync(); await tx.CommitAsync(); return WorkflowResult.Ok("Order status updated successfully.",order.Id); } catch(DbUpdateConcurrencyException) { return WorkflowResult.Fail("The order changed concurrently. Refresh and try again."); }
+        try { await _db.SaveChangesAsync(); await tx.CommitAsync(); return WorkflowResult.Ok("Order status updated successfully.",order.Id); } catch(DbUpdateConcurrencyException) { return WorkflowResult.Fail("The order changed concurrently. Refresh and try again."); } catch(DbUpdateException) { return WorkflowResult.Fail("The order could not be updated. No changes were applied; refresh and try again."); }
     }
 
     private void AddNotification(int userId,string title,string message,string type,int relatedId,string operationKey)

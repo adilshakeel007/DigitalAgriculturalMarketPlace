@@ -26,6 +26,7 @@ public class InventoryService
         AddMovement(product, "ManualAdjustment", newAvailable - before, 0, sellerId, "Product", product.Id, reason, operationKey);
         try { await _db.SaveChangesAsync(); await tx.CommitAsync(); return WorkflowResult.Ok("Inventory adjusted successfully."); }
         catch (DbUpdateConcurrencyException) { return WorkflowResult.Fail("Inventory changed while you were editing. Refresh and try again."); }
+        catch (DbUpdateException) { return WorkflowResult.Fail("Inventory could not be updated. No changes were applied; refresh and try again."); }
     }
 
     internal void AddMovement(Product product, string type, decimal availableDelta, decimal reservedDelta, int? actorId, string referenceType, int referenceId, string? reason, string operationKey)

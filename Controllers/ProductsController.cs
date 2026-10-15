@@ -88,46 +88,13 @@ namespace DigitalAgriculturalMarketplace.Controllers
             if (model.ImageFile != null &&
                 model.ImageFile.Length > 0)
             {
-                string[] allowedExtensions =
+                var validation = await ImageUploadValidator.ValidateAsync(model.ImageFile);
+                if (!validation.IsValid)
                 {
-            ".jpg",
-            ".jpeg",
-            ".png"
-        };
-
-                string extension =
-                    Path.GetExtension(
-                        model.ImageFile.FileName
-                    ).ToLower();
-
-                string[] allowedContentTypes =
-                {
-                    "image/jpeg",
-                    "image/png"
-                };
-
-                if (!allowedExtensions.Contains(extension) ||
-                    !allowedContentTypes.Contains(model.ImageFile.ContentType))
-                {
-                    ModelState.AddModelError(
-                        "ImageFile",
-                        "Please upload a valid JPG or PNG image."
-                    );
+                    ModelState.AddModelError("ImageFile", validation.Error!);
                     return View(model);
                 }
-
-                long maxFileSize =
-                    5 * 1024 * 1024;
-
-                if (model.ImageFile.Length > maxFileSize)
-                {
-                    ModelState.AddModelError(
-                        "ImageFile",
-                        "Image size cannot exceed 5 MB."
-                    );
-
-                    return View(model);
-                }
+                string extension = validation.Extension!;
 
                 string uniqueFileName =
                     Guid.NewGuid().ToString()
@@ -197,7 +164,16 @@ namespace DigitalAgriculturalMarketplace.Controllers
             await using var inventoryTransaction = await _context.Database.BeginTransactionAsync();
             _context.Products.Add(product);
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                DeleteLocalImage(imageUrl);
+                ModelState.AddModelError("", "The listing could not be saved. No database changes were applied; please try again.");
+                return View(model);
+            }
             _inventory.AddMovement(product, "OpeningBalance", model.Quantity, 0, farmerId.Value, "Product", product.Id, "Initial listing stock", $"opening:product:{product.Id}");
             await _context.SaveChangesAsync();
             await inventoryTransaction.CommitAsync();
@@ -264,90 +240,19 @@ namespace DigitalAgriculturalMarketplace.Controllers
             product.Description = model.Description;
             product.IsActive = model.IsActive;
 
+            string? oldImageUrl = product.ImageUrl;
+            string? newImageUrl = null;
             if (model.NewImageFile != null &&
                 model.NewImageFile.Length > 0)
             {
-                string[] allowedExtensions =
+                var validation = await ImageUploadValidator.ValidateAsync(model.NewImageFile);
+                if (!validation.IsValid)
                 {
-            ".jpg",
-            ".jpeg",
-            ".png"
-        };
-
-                string extension =
-                    Path.GetExtension(
-                        model.NewImageFile.FileName
-                    ).ToLower();
-
-                if (!allowedExtensions.Contains(extension))
-                {
-                    ModelState.AddModelError(
-                        "NewImageFile",
-                        "Only JPG, JPEG and PNG images are allowed."
-                    );
-
-                    model.CurrentImageUrl =
-                        product.ImageUrl;
-
-                    return View(model);
-                }
-
-                string[] allowedContentTypes =
-                {
-                    "image/jpeg",
-                    "image/png"
-                };
-
-                if (!allowedContentTypes.Contains(model.NewImageFile.ContentType))
-                {
-                    ModelState.AddModelError(
-                        "NewImageFile",
-                        "Please upload a valid JPG or PNG image."
-                    );
-
+                    ModelState.AddModelError("NewImageFile", validation.Error!);
                     model.CurrentImageUrl = product.ImageUrl;
                     return View(model);
                 }
-
-                long maxFileSize =
-                    5 * 1024 * 1024;
-
-                if (model.NewImageFile.Length >
-                    maxFileSize)
-                {
-                    ModelState.AddModelError(
-                        "NewImageFile",
-                        "Image size cannot exceed 5 MB."
-                    );
-
-                    model.CurrentImageUrl =
-                        product.ImageUrl;
-
-                    return View(model);
-                }
-
-                if (!string.IsNullOrEmpty(
-                    product.ImageUrl))
-                {
-                    string oldImagePath =
-                        Path.Combine(
-                            _environment.WebRootPath,
-                            product.ImageUrl
-                                .TrimStart('/')
-                                .Replace(
-                                    '/',
-                                    Path.DirectorySeparatorChar
-                                )
-                        );
-
-                    if (System.IO.File.Exists(
-                        oldImagePath))
-                    {
-                        System.IO.File.Delete(
-                            oldImagePath
-                        );
-                    }
-                }
+                string extension = validation.Extension!;
 
                 string uniqueFileName =
                     Guid.NewGuid().ToString()
@@ -377,17 +282,38 @@ namespace DigitalAgriculturalMarketplace.Controllers
                         .CopyToAsync(stream);
                 }
 
-                product.ImageUrl =
+                newImageUrl =
                     "/images/products/"
                     + uniqueFileName;
+                product.ImageUrl = newImageUrl;
             }
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                DeleteLocalImage(newImageUrl);
+                ModelState.AddModelError("", "The listing could not be updated. No database changes were applied; please refresh and try again.");
+                model.CurrentImageUrl = oldImageUrl;
+                return View(model);
+            }
+            if (newImageUrl is not null && oldImageUrl != newImageUrl) DeleteLocalImage(oldImageUrl);
 
             TempData["SuccessMessage"] =
                 "Product updated successfully.";
 
             return RedirectToAction("Index");
+        }
+
+        private void DeleteLocalImage(string? imageUrl)
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl) || !imageUrl.StartsWith("/images/products/", StringComparison.Ordinal)) return;
+            var fileName = Path.GetFileName(imageUrl);
+            if (string.IsNullOrWhiteSpace(fileName)) return;
+            var path = Path.Combine(_environment.WebRootPath, "images", "products", fileName);
+            if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
         }
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
