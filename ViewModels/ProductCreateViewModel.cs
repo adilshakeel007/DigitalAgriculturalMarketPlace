@@ -17,8 +17,8 @@ namespace DigitalAgriculturalMarketplace.ViewModels
         public decimal PricePerUnit { get; set; }
 
         [Required(ErrorMessage = "Quantity is required.")]
-        [Range(0, 1000000)]
-        public int Quantity { get; set; }
+        [Range(typeof(decimal), "0", "1000000")]
+        public decimal Quantity { get; set; }
 
         [StringLength(1000)]
         public string? Description { get; set; }
@@ -33,7 +33,6 @@ namespace DigitalAgriculturalMarketplace.ViewModels
 
         public List<DigitalAgriculturalMarketplace.Models.UnitOfMeasure> Units { get; set; } = new();
 
-        [Required(ErrorMessage = "Please select a product image.")]
         public IFormFile? ImageFile { get; set; }
     }
 }

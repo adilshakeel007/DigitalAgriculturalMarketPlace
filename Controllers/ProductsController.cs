@@ -140,7 +140,9 @@ namespace DigitalAgriculturalMarketplace.Controllers
 
                 PricePerUnit = model.PricePerUnit,
 
-                Quantity = model.Quantity,
+                // Quantity is the retained legacy whole-number compatibility column.
+                // AvailableQuantity is authoritative and preserves fractional stock.
+                Quantity = (int)Math.Floor(model.Quantity),
 
                 Description = model.Description,
 

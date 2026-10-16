@@ -15,9 +15,9 @@ public class RfqsController : Controller
     public RfqsController(ApplicationDbContext db,RfqWorkflowService workflow){_db=db;_workflow=workflow;}
     public async Task<IActionResult> Index(){int id=UserId;return View(await _db.Rfqs.Include(x=>x.Items).Where(x=>x.BuyerId==id).OrderByDescending(x=>x.CreatedAt).ToListAsync());}
     [HttpGet] public async Task<IActionResult> Create(){var m=new RfqCreateViewModel{Items=[new()]};await Options(m);return View(m);}
-    [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> Create(RfqCreateViewModel model){if(!ModelState.IsValid){await Options(model);return View(model);}var r=await _workflow.CreateAsync(UserId,model);if(!r.Succeeded){ModelState.AddModelError("",r.Message);await Options(model);return View(model);}return RedirectToAction(nameof(Details),new{id=r.OrderId});}
+    [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> Create(RfqCreateViewModel model){IgnoreUnusedItemValidation(model);if(!ModelState.IsValid){await Options(model);return View(model);}var r=await _workflow.CreateAsync(UserId,model);if(!r.Succeeded){ModelState.AddModelError("",r.Message);await Options(model);return View(model);}return RedirectToAction(nameof(Details),new{id=r.OrderId});}
     [HttpGet] public async Task<IActionResult> Edit(int id){var r=await _db.Rfqs.Include(x=>x.Items).FirstOrDefaultAsync(x=>x.Id==id&&x.BuyerId==UserId&&x.Status=="Draft");if(r is null)return NotFound();var m=new RfqCreateViewModel{Id=r.Id,Title=r.Title,Description=r.Description,DeliveryLocation=r.DeliveryLocation,RequiredByDate=r.RequiredByDate,Items=r.Items.Select(x=>new RfqItemInputViewModel{CatalogProductId=x.CatalogProductId,UnitOfMeasureId=x.UnitOfMeasureId,RequestedQuantity=x.RequestedQuantity,MaximumBudgetPerUnit=x.MaximumBudgetPerUnit,Specifications=x.Specifications}).ToList()};await Options(m);return View("Create",m);}
-    [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> Edit(RfqCreateViewModel model){if(!ModelState.IsValid){await Options(model);return View("Create",model);}var r=await _workflow.UpdateDraftAsync(UserId,model);if(!r.Succeeded){ModelState.AddModelError("",r.Message);await Options(model);return View("Create",model);}return RedirectToAction(nameof(Details),new{id=model.Id});}
+    [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> Edit(RfqCreateViewModel model){IgnoreUnusedItemValidation(model);if(!ModelState.IsValid){await Options(model);return View("Create",model);}var r=await _workflow.UpdateDraftAsync(UserId,model);if(!r.Succeeded){ModelState.AddModelError("",r.Message);await Options(model);return View("Create",model);}return RedirectToAction(nameof(Details),new{id=model.Id});}
     public async Task<IActionResult> Details(int id){var rfq=await _db.Rfqs.Include(x=>x.Buyer).Include(x=>x.Items).ThenInclude(x=>x.CatalogProduct).Include(x=>x.Items).ThenInclude(x=>x.UnitOfMeasure).Include(x=>x.Quotations).ThenInclude(x=>x.Seller).Include(x=>x.Quotations).ThenInclude(x=>x.Items).ThenInclude(x=>x.Product).Include(x=>x.Quotations).ThenInclude(x=>x.Items).ThenInclude(x=>x.Allocations).ThenInclude(x=>x.Order).FirstOrDefaultAsync(x=>x.Id==id&&x.BuyerId==UserId);return rfq is null?NotFound():View(rfq);}
     [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> Publish(int id){Flash(await _workflow.PublishAsync(id,UserId));return RedirectToAction(nameof(Details),new{id});}
     [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> Close(int id){Flash(await _workflow.CloseAsync(id,UserId));return RedirectToAction(nameof(Details),new{id});}
@@ -33,6 +33,19 @@ public class RfqsController : Controller
     [HttpPost,ValidateAntiForgeryToken] public async Task<IActionResult> Accept(AllocationViewModel model){var result=await _workflow.AcceptAsync(UserId,model);Flash(result);var qid=await _db.QuotationItems.Where(x=>x.Id==model.QuotationItemId).Select(x=>x.QuotationId).FirstOrDefaultAsync();return RedirectToAction(nameof(QuotationDetails),new{id=qid});}
     private int UserId=>HttpContext.Session.GetInt32("UserId")!.Value;
     private void Flash(WorkflowResult r)=>TempData[r.Succeeded?"SuccessMessage":"ErrorMessage"]=r.Message;
+    private void IgnoreUnusedItemValidation(RfqCreateViewModel model)
+    {
+        for (var index = 0; index < model.Items.Count; index++)
+        {
+            var item = model.Items[index];
+            if (item.CatalogProductId != 0 || item.UnitOfMeasureId != 0 || item.RequestedQuantity != 0)
+                continue;
+
+            ModelState.Remove($"Items[{index}].CatalogProductId");
+            ModelState.Remove($"Items[{index}].UnitOfMeasureId");
+            ModelState.Remove($"Items[{index}].RequestedQuantity");
+        }
+    }
     private async Task Options(RfqCreateViewModel m){m.CatalogProducts=await _db.CatalogProducts.Where(x=>x.Status=="Approved"&&x.IsActive).OrderBy(x=>x.Name).ToListAsync();m.Units=await _db.UnitsOfMeasure.Where(x=>x.IsActive).OrderBy(x=>x.Name).ToListAsync();if(m.Items.Count==0)m.Items.Add(new());}
     private Task<List<Product>> EligibleProducts(int sellerId)=>_db.Products.Include(x=>x.CatalogProduct).Include(x=>x.UnitOfMeasure).Where(p=>p.FarmerId==sellerId&&p.IsActive&&p.CatalogProductId!=null&&p.UnitOfMeasureId!=null&&p.CatalogProduct!.Status=="Approved"&&p.CatalogProduct.IsActive&&p.UnitOfMeasure!.IsActive).OrderBy(p=>p.Name).ToListAsync();
 }
