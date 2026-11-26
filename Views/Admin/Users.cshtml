@@ -1,151 +1,29 @@
-﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.User>
+@model IEnumerable<DigitalAgriculturalMarketplace.Models.User>
+@{ ViewData["Title"] = "Manage users"; }
 
-@{
-    ViewData["Title"] = "Manage Users";
-}
+<div class="container">
+    <div class="page-header"><div><p class="eyebrow">Administration</p><h1 class="h2">Users</h1><p>Review farmer and consumer access across the marketplace.</p></div><span class="badge bg-success align-self-center">@Model.Count() results</span></div>
+    @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
 
-<div class="container mt-4">
-
-    <h2>
-        Manage Users
-    </h2>
-
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">
-            @TempData["SuccessMessage"]
+    <form method="get" class="filter-panel">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-6"><label class="form-label" for="userSearch">Search users</label><input id="userSearch" name="searchTerm" value="@ViewBag.SearchTerm" class="form-control" placeholder="Name, email, or phone" /></div>
+            <div class="col-sm-6 col-lg-2"><label class="form-label" for="userType">Role</label><select id="userType" name="userType" class="form-select"><option value="">All roles</option><option value="Farmer" selected="@(ViewBag.UserType == "Farmer")">Farmers</option><option value="Consumer" selected="@(ViewBag.UserType == "Consumer")">Consumers</option></select></div>
+            <div class="col-sm-6 col-lg-2"><label class="form-label" for="userStatus">Status</label><select id="userStatus" name="status" class="form-select"><option value="">All statuses</option><option value="active" selected="@(ViewBag.Status == "active")">Active</option><option value="inactive" selected="@(ViewBag.Status == "inactive")">Inactive</option></select></div>
+            <div class="col-lg-2 d-flex gap-2"><button class="btn btn-primary" type="submit">Filter</button><a asp-action="Users" class="btn btn-secondary">Clear</a></div>
         </div>
+    </form>
+
+    @if (!Model.Any()) { <div class="empty-state"><h2 class="h4">No users found</h2><p class="mb-0">Try changing the filters.</p></div> }
+    else
+    {
+        <div class="table-responsive"><table class="table table-hover"><thead><tr><th>User</th><th>Contact</th><th>Role</th><th>Status</th><th>Joined</th><th><span class="visually-hidden">Action</span></th></tr></thead><tbody>
+        @foreach (var user in Model)
+        {
+            <tr><td><strong>@user.Name</strong><div class="product-meta">ID #@user.Id</div></td><td>@user.Email<div class="product-meta">@user.Phone</div></td><td>@user.UserType</td><td><span class="badge @(user.IsActive ? "bg-success" : "bg-danger")">@(user.IsActive ? "Active" : "Inactive")</span></td><td>@user.CreatedAt.ToString("dd MMM yyyy")</td><td>
+                <form asp-action="ToggleUserStatus" method="post" data-confirm="@(user.IsActive ? "Deactivate this user account?" : "Reactivate this user account?")"><input type="hidden" name="id" value="@user.Id" /><button type="submit" class="btn btn-sm @(user.IsActive ? "btn-danger" : "btn-success")">@(user.IsActive ? "Deactivate" : "Activate")</button></form>
+            </td></tr>
+        }
+        </tbody></table></div>
     }
-
-    <div class="table-responsive">
-
-        <table class="table table-bordered table-hover">
-
-            <thead>
-
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Registered</th>
-                    <th>Action</th>
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                @foreach (var user in Model)
-                {
-                    <tr>
-
-                        <td>
-                            @user.Id
-                        </td>
-
-                        <td>
-                            @user.Name
-                        </td>
-
-                        <td>
-                            @user.Email
-                        </td>
-
-                        <td>
-                            @user.Phone
-                        </td>
-
-                        <td>
-                            @user.UserType
-                        </td>
-
-                        <td>
-
-                            @if (user.IsActive)
-                            {
-                                <span class="badge bg-success">
-                                    Active
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-danger">
-                                    Inactive
-                                </span>
-                            }
-
-                    </td>
-
-                    <td>
-                        @(user.CreatedAt
-                                                .ToString("dd MMM yyyy"))
-                    </td>
-
-                        <td>
-
-                        @if (user.IsActive)
-                            {
-                                <form asp-controller="Admin"
-                                      asp-action="ToggleUserStatus"
-                                      method="post">
-
-                                    @Html.AntiForgeryToken()
-
-                                    <input type="hidden"
-                                           name="id"
-                                           value="@user.Id" />
-
-                                    <button type="submit"
-                                            class="btn btn-sm btn-danger">
-
-                                        Deactivate
-
-                                    </button>
-
-                                </form>
-                            }
-                            else
-                            {
-                                <form asp-controller="Admin"
-                                      asp-action="ToggleUserStatus"
-                                      method="post">
-
-                                    @Html.AntiForgeryToken()
-
-                                    <input type="hidden"
-                                           name="id"
-                                           value="@user.Id" />
-
-                                    <button type="submit"
-                                            class="btn btn-sm btn-success">
-
-                                        Activate
-
-                                    </button>
-
-                                </form>
-                            }
-
-                        </td>
-
-                    </tr>
-                }
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-    <a asp-controller="Admin"
-       asp-action="Dashboard"
-       class="btn btn-secondary">
-
-        Back to Dashboard
-
-    </a>
-
 </div>

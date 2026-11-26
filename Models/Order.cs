@@ -15,8 +15,9 @@ namespace DigitalAgriculturalMarketplace.Models
         public int ProductId { get; set; }
 
         [Required]
-        [Range(1, 1000000)]
-        public int Quantity { get; set; }
+        [Range(typeof(decimal), "0.001", "1000000")]
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal Quantity { get; set; }
 
         [Column(TypeName = "decimal(10,2)")]
         public decimal TotalPrice { get; set; }
@@ -27,9 +28,21 @@ namespace DigitalAgriculturalMarketplace.Models
 
         public DateTime OrderDate { get; set; } = DateTime.Now;
 
+        public int? SellerId { get; set; }
+        [StringLength(40)] public string? OrderNumber { get; set; }
+        [Column(TypeName = "decimal(18,2)")] public decimal? Subtotal { get; set; }
+        [StringLength(500)] public string? CancellationReason { get; set; }
+        public DateTime? CancelledAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        [Timestamp] public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
         // Navigation Properties
         public User? Consumer { get; set; }
 
         public Product? Product { get; set; }
+        public User? Seller { get; set; }
+        public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+        public ICollection<OrderStatusHistory> StatusHistory { get; set; } = new List<OrderStatusHistory>();
     }
 }

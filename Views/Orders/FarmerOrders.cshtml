@@ -1,129 +1,28 @@
-﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Order>
+@model IEnumerable<DigitalAgriculturalMarketplace.Models.Order>
+@{ ViewData["Title"] = "Orders"; }
 
-@{
-    ViewData["Title"] = "Farmer Orders";
-}
+<div class="management-shell">
+    <partial name="_FarmerSidebar" />
+    <div class="management-content">
+        <div class="management-header"><div><h1>Orders</h1><p>Confirm new orders, track fulfilment, and review order history.</p></div></div>
+        @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
+        @if (TempData["ErrorMessage"] != null) { <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div> }
 
-<div class="container mt-4">
+        <form method="get" class="filter-panel compact-filter"><div class="d-flex flex-wrap align-items-end gap-2">
+            <div><label class="form-label" for="farmerOrderStatus">Status</label><select id="farmerOrderStatus" name="status" class="form-select"><option value="">All orders</option><option value="Pending" selected="@(ViewBag.Status == "Pending")">Pending</option><option value="Confirmed" selected="@(ViewBag.Status == "Confirmed")">Confirmed</option><option value="Completed" selected="@(ViewBag.Status == "Completed")">Completed</option><option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Cancelled</option></select></div>
+            <button class="btn btn-primary btn-sm" type="submit">Apply</button><a asp-action="FarmerOrders" class="btn btn-secondary btn-sm">Clear</a>
+        </div></form>
 
-    <h2>Orders Received</h2>
-
-    <p class="text-muted">
-        Manage orders placed on your products.
-    </p>
-
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">
-            @TempData["SuccessMessage"]
-        </div>
-    }
-
-    @if (!Model.Any())
-    {
-        <div class="alert alert-info">
-            No orders have been placed on your products yet.
-        </div>
-    }
-    else
-    {
-        <div class="table-responsive">
-
-            <table class="table table-bordered table-striped">
-
-                <thead>
-                    <tr>
-                        <th>Order ID</th>
-                        <th>Product</th>
-                        <th>Consumer</th>
-                        <th>Quantity</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th>Order Date</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    @foreach (var order in Model)
-                    {
-                        <tr>
-
-                            <td>
-                                @order.Id
-                            </td>
-
-                            <td>
-                                @order.Product?.Name
-                            </td>
-
-                            <td>
-                                @order.Consumer?.Name
-                            </td>
-
-                            <td>
-                                @order.Quantity
-                            </td>
-
-                            <td>
-                                Rs. @order.TotalPrice.ToString("N2")
-                            </td>
-
-                            <td>
-
-                                @if (order.Status == "Pending")
-                                {
-                                    <span class="badge bg-warning text-dark">
-                                        Pending
-                                    </span>
-                                }
-                                else if (order.Status == "Confirmed")
-                                {
-                                    <span class="badge bg-primary">
-                                        Confirmed
-                                    </span>
-                                }
-                                else if (order.Status == "Completed")
-                                {
-                                    <span class="badge bg-success">
-                                        Completed
-                                    </span>
-                                }
-                                else if (order.Status == "Cancelled")
-                                {
-                                    <span class="badge bg-danger">
-                                        Cancelled
-                                    </span>
-                                }
-
-                            </td>
-
-                            <td>
-                                @(order.OrderDate.ToString("dd MMM yyyy"))
-                            </td>
-
-                            <td>
-
-                                <a asp-controller="Orders"
-                                   asp-action="FarmerOrderDetails"
-                                   asp-route-id="@order.Id"
-                                   class="btn btn-sm btn-primary">
-
-                                    Manage
-
-                                </a>
-
-                            </td>
-
-                        </tr>
-                    }
-
-                </tbody>
-
-            </table>
-
-        </div>
-    }
-
+        @if (!Model.Any())
+        {
+            <div class="empty-state"><h2 class="h5">No orders found</h2><p class="mb-0">New orders or orders matching this filter will appear here.</p></div>
+        }
+        else
+        {
+            <div class="panel"><div class="panel-header"><div><h2>Order list</h2><p>@Model.Count() order(s)</p></div></div><div class="table-responsive border-0 rounded-0 shadow-none"><table class="table table-hover">
+                <thead><tr><th>Order</th><th>Product</th><th>Customer</th><th>Total</th><th>Status</th><th>Placed</th><th></th></tr></thead>
+                <tbody>@foreach (var order in Model) { var item=order.Items.FirstOrDefault(); <tr><td>@(order.OrderNumber ?? $"#{order.Id}")</td><td><strong>@(item?.ProductNameSnapshot ?? order.Product?.Name)</strong><div class="product-meta">@((item?.Quantity ?? order.Quantity).ToString("0.###")) @(item?.UnitNameSnapshot ?? "unit not recorded")</div></td><td>@order.Consumer?.Name</td><td>Rs. @order.TotalPrice.ToString("N2")</td><td><partial name="_OrderStatus" model="order.Status" /></td><td>@order.OrderDate.ToString("dd MMM yyyy")</td><td><a class="btn btn-sm btn-secondary" asp-action="FarmerOrderDetails" asp-route-id="@order.Id">Manage</a></td></tr> }</tbody>
+            </table></div></div>
+        }
+    </div>
 </div>

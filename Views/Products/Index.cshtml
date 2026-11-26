@@ -1,131 +1,41 @@
-﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Product>
+@model IEnumerable<DigitalAgriculturalMarketplace.Models.Product>
+@{ ViewData["Title"] = "Products"; }
 
-@{
-    ViewData["Title"] = "My Products";
-}
+<div class="management-shell">
+    <partial name="_FarmerSidebar" />
+    <div class="management-content">
+        <div class="management-header"><div><h1>Products</h1><p>Manage listing details, pricing, availability, and stock.</p></div><a asp-action="Create" class="btn btn-primary btn-sm">Add product</a></div>
+        @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
 
-<div class="container mt-4">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-
-        <h2>My Products</h2>
-        @if (TempData["SuccessMessage"] != null)
+        @if (!Model.Any())
         {
-            <div class="alert alert-success">
-                @TempData["SuccessMessage"]
+            <div class="empty-state"><h2 class="h5">Start your catalogue</h2><p>Add your first product so consumers can discover it.</p><a asp-action="Create" class="btn btn-primary btn-sm">Add first product</a></div>
+        }
+        else
+        {
+            <div class="panel">
+                <div class="panel-header"><div><h2>All products</h2><p>@Model.Count() listing(s)</p></div><span class="product-meta">@Model.Count(p => p.IsActive) active</span></div>
+                <div class="table-responsive border-0 rounded-0 shadow-none"><table class="table table-hover">
+                    <thead><tr><th>Product</th><th>Price</th><th>Inventory</th><th>Visibility</th><th>Updated</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+                    <tbody>
+                    @foreach (var product in Model)
+                    {
+                        decimal available = product.AvailableQuantity ?? product.Quantity;
+                        string stockClass = available == 0 ? "out" : available <= 5 ? "low" : string.Empty;
+                        string unit = product.UnitOfMeasure?.Code ?? "unit not mapped";
+                        string stockText = available == 0 ? "Out of stock" : $"{available:0.###} available";
+                        <tr>
+                            <td><div class="d-flex align-items-center gap-3">@if (!string.IsNullOrEmpty(product.ImageUrl)) { <img class="table-thumbnail" src="@product.ImageUrl" alt="" loading="lazy" /> } else { <span class="table-thumbnail product-image-placeholder" aria-hidden="true">A</span> }<div><strong>@product.Name</strong><div class="product-meta">@product.Category</div></div></div></td>
+                            <td><strong>Rs. @product.PricePerUnit.ToString("N2")</strong><div class="product-meta">per unit</div></td>
+                            <td><span class="stock-label @stockClass">@stockText</span><div class="product-meta">@product.ReservedQuantity.ToString("0.###") reserved · @((available+product.ReservedQuantity).ToString("0.###")) on hand · @unit</div></td>
+                            <td><span class="status-pill @(product.IsActive ? "status-completed" : "status-neutral")"><span class="status-dot"></span>@(product.IsActive ? "Active" : "Hidden")</span></td>
+                            <td>@product.ListedAt.ToString("dd MMM yyyy")</td>
+                            <td class="text-nowrap"><a asp-action="AdjustInventory" asp-route-id="@product.Id" class="btn btn-sm btn-primary">Inventory</a><a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-sm btn-secondary">Edit</a><a asp-action="Details" asp-route-id="@product.Id" class="btn btn-sm btn-link">View</a></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table></div>
             </div>
         }
-
-        <a asp-controller="Products"
-           asp-action="Create"
-           class="btn btn-success">
-            + Add Product
-        </a>
-
     </div>
-
-    @if (!Model.Any())
-    {
-        <div class="alert alert-info">
-            You have not added any products yet.
-        </div>
-    }
-    else
-    {
-        <table class="table table-bordered table-striped">
-
-            <thead>
-                <tr>
-                    <th>Image</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Status</th>
-                    <th>Listed Date</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                @foreach (var product in Model)
-                {
-                    <tr>
-                        <td>
-
-                            @if (!string.IsNullOrEmpty(product.ImageUrl))
-                            {
-                                <img src="@product.ImageUrl"
-                                     alt="@product.Name"
-                                     width="80"
-                                     height="80"
-                                     style="object-fit: cover;" />
-                            }
-                            else
-                            {
-                                <span>No Image</span>
-                            }
-
-                        </td>
-
-                        <td>@product.Name</td>
-
-                        <td>@product.Category</td>
-
-                        <td>
-                            Rs. @product.PricePerUnit
-                        </td>
-
-                        <td>@product.Quantity</td>
-
-                        <td>
-                            @if (product.IsActive)
-                            {
-                                <span class="badge bg-success">
-                                    Active
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary">
-                                    Inactive
-                                </span>
-                            }
-                        </td>
-
-                        <td>
-                            @product.ListedAt.ToString("dd MMM yyyy")
-                        </td>
-
-                        <td>
-
-                            <a asp-action="Details"
-                               asp-route-id="@product.Id"
-                               class="btn btn-sm btn-info">
-                                Details
-                            </a>
-
-                            <a asp-action="Edit"
-                               asp-route-id="@product.Id"
-                               class="btn btn-sm btn-warning">
-                                Edit
-                            </a>
-
-                            <a asp-action="Delete"
-                               asp-route-id="@product.Id"
-                               class="btn btn-sm btn-danger">
-                                Delete
-                            </a>
-
-                        </td>
-
-                    </tr>
-                }
-
-            </tbody>
-
-        </table>
-    }
-
 </div>

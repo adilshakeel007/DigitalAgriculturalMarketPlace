@@ -17,13 +17,22 @@ namespace DigitalAgriculturalMarketplace.ViewModels
         public decimal PricePerUnit { get; set; }
 
         [Required(ErrorMessage = "Quantity is required.")]
-        [Range(0, 1000000)]
-        public int Quantity { get; set; }
+        [Range(typeof(decimal), "0", "1000000")]
+        public decimal Quantity { get; set; }
 
         [StringLength(1000)]
         public string? Description { get; set; }
 
-        [Required(ErrorMessage = "Please select a product image.")]
+        [Required(ErrorMessage = "Select an approved catalog product.")]
+        public int? CatalogProductId { get; set; }
+
+        [Required(ErrorMessage = "Select a unit of measure.")]
+        public int? UnitOfMeasureId { get; set; }
+
+        public List<DigitalAgriculturalMarketplace.Models.CatalogProduct> CatalogProducts { get; set; } = new();
+
+        public List<DigitalAgriculturalMarketplace.Models.UnitOfMeasure> Units { get; set; } = new();
+
         public IFormFile? ImageFile { get; set; }
     }
 }

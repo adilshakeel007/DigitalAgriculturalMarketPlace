@@ -1,0 +1,41 @@
+@model DigitalAgriculturalMarketplace.ViewModels.MemberDashboardViewModel
+@{ ViewData["Title"] = "Dashboard"; }
+
+<div class="container">
+    <div class="page-header">
+        <div><p class="eyebrow">Marketplace account</p><h1 class="h2">Dashboard</h1><p>Manage buying and selling from one account.</p></div>
+        <div class="d-flex gap-2"><a class="btn btn-primary" asp-controller="Marketplace" asp-action="Index">Browse marketplace</a><a class="btn btn-secondary" asp-controller="Products" asp-action="Create">Create listing</a></div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-4"><a class="btn btn-outline-primary" asp-controller="Rfqs" asp-action="Index">My RFQs (@Model.OpenRfqCount open)</a><a class="btn btn-outline-primary" asp-controller="Rfqs" asp-action="Browse">Seller opportunities</a><a class="btn btn-outline-primary" asp-controller="Rfqs" asp-action="MyQuotations">My quotations (@Model.SubmittedQuotationCount active)</a></div>
+
+    <div class="kpi-grid mb-4">
+        <div class="kpi-card"><span>Purchases</span><strong>@Model.PurchaseCount</strong><small>@Model.ActivePurchaseCount active</small></div>
+        <div class="kpi-card"><span>Listings</span><strong>@Model.ListingCount</strong><small>@Model.ActiveListingCount active</small></div>
+        <div class="kpi-card"><span>Sales</span><strong>@Model.SalesCount</strong><small>@Model.PendingSalesCount awaiting action</small></div>
+        <div class="kpi-card"><span>Inbox</span><strong>@(Model.UnreadMessages + Model.UnreadNotifications)</strong><small>unread updates</small></div>
+    </div>
+
+    @if (Model.SellerProfile == null)
+    {
+        <div class="alert alert-success d-flex justify-content-between align-items-center gap-3">
+            <span>Activate a seller profile when you are ready to list products.</span>
+            <a class="btn btn-sm btn-primary" asp-controller="SellerProfiles" asp-action="Activate">Start selling</a>
+        </div>
+    }
+    else if (!Model.SellerProfile.IsActive)
+    {
+        <div class="alert alert-warning">Your seller profile is paused. You can reactivate it from Seller Profile.</div>
+    }
+
+    <div class="order-detail-grid">
+        <section class="panel"><div class="panel-header"><div><h2>Recent purchases</h2><p>Your latest marketplace orders</p></div><a class="panel-link" asp-controller="Orders" asp-action="MyOrders">View all</a></div><div class="panel-body">
+            @if (!Model.RecentPurchases.Any()) { <div class="empty-state"><p>No purchases yet.</p></div> }
+            else { <div class="table-responsive"><table class="table"><tbody>@foreach (var order in Model.RecentPurchases) { <tr><td><strong>@order.Product?.Name</strong><div class="product-meta">Order #@order.Id</div></td><td><partial name="_OrderStatus" model="order.Status" /></td><td class="text-end">Rs. @order.TotalPrice.ToString("N2")</td></tr> }</tbody></table></div> }
+        </div></section>
+        <section class="panel"><div class="panel-header"><div><h2>Recent sales</h2><p>Orders for your listings</p></div><a class="panel-link" asp-controller="Orders" asp-action="FarmerOrders">View all</a></div><div class="panel-body">
+            @if (!Model.RecentSales.Any()) { <div class="empty-state"><p>No sales yet.</p></div> }
+            else { <div class="table-responsive"><table class="table"><tbody>@foreach (var order in Model.RecentSales) { <tr><td><strong>@order.Product?.Name</strong><div class="product-meta">@order.Consumer?.Name</div></td><td><partial name="_OrderStatus" model="order.Status" /></td><td class="text-end">Rs. @order.TotalPrice.ToString("N2")</td></tr> }</tbody></table></div> }
+        </div></section>
+    </div>
+</div>

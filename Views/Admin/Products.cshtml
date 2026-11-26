@@ -1,138 +1,27 @@
-﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Product>
+@model IEnumerable<DigitalAgriculturalMarketplace.Models.Product>
+@{ ViewData["Title"] = "Manage products"; }
 
-@{
-    ViewData["Title"] = "Manage Products";
-}
+<div class="container">
+    <div class="page-header"><div><p class="eyebrow">Administration</p><h1 class="h2">Products</h1><p>Monitor listings, stock, and marketplace visibility.</p></div><span class="badge bg-success align-self-center">@Model.Count() results</span></div>
+    @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
 
-<div class="container mt-4">
+    <form method="get" class="filter-panel"><div class="row g-3 align-items-end">
+        <div class="col-lg-5"><label class="form-label" for="productSearch">Search</label><input id="productSearch" name="searchTerm" value="@ViewBag.SearchTerm" class="form-control" placeholder="Product or farmer" /></div>
+        <div class="col-sm-6 col-lg-2"><label class="form-label" for="adminCategory">Category</label><select id="adminCategory" name="category" class="form-select"><option value="">All</option><option value="Vegetables" selected="@(ViewBag.Category == "Vegetables")">Vegetables</option><option value="Fruits" selected="@(ViewBag.Category == "Fruits")">Fruits</option><option value="Grains" selected="@(ViewBag.Category == "Grains")">Grains</option><option value="Dairy" selected="@(ViewBag.Category == "Dairy")">Dairy</option><option value="Other" selected="@(ViewBag.Category == "Other")">Other</option></select></div>
+        <div class="col-sm-6 col-lg-2"><label class="form-label" for="productStatus">Status</label><select id="productStatus" name="status" class="form-select"><option value="">All</option><option value="active" selected="@(ViewBag.Status == "active")">Active</option><option value="inactive" selected="@(ViewBag.Status == "inactive")">Inactive</option></select></div>
+        <div class="col-lg-3 d-flex gap-2"><button class="btn btn-primary" type="submit">Filter</button><a asp-action="Products" class="btn btn-secondary">Clear</a></div>
+    </div></form>
 
-    <h2>
-        Manage Products
-    </h2>
-
-    @if (TempData["SuccessMessage"] != null)
+    @if (!Model.Any()) { <div class="empty-state"><h2 class="h4">No products found</h2><p class="mb-0">Try changing the filters.</p></div> }
+    else
     {
-        <div class="alert alert-success">
-            @TempData["SuccessMessage"]
-        </div>
+        <div class="table-responsive"><table class="table table-hover"><thead><tr><th>Product</th><th>Farmer</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th><span class="visually-hidden">Action</span></th></tr></thead><tbody>
+        @foreach (var product in Model)
+        {
+            <tr><td><div class="d-flex align-items-center gap-3">@if (!string.IsNullOrEmpty(product.ImageUrl)) { <img class="table-thumbnail" src="@product.ImageUrl" alt="" /> }<div><strong>@product.Name</strong><div class="product-meta">ID #@product.Id</div></div></div></td><td>@product.Farmer?.Name</td><td>@product.Category</td><td>Rs. @product.PricePerUnit.ToString("N2")</td><td>@((product.AvailableQuantity ?? product.Quantity).ToString("0.###")) @(product.UnitOfMeasure?.Code ?? "unit")</td><td><span class="badge @(product.IsActive ? "bg-success" : "bg-danger")">@(product.IsActive ? "Active" : "Inactive")</span></td><td>
+                <form asp-action="ToggleProductStatus" method="post" data-confirm="@(product.IsActive ? "Hide this product from the marketplace?" : "Make this product visible again?")"><input type="hidden" name="id" value="@product.Id" /><button type="submit" class="btn btn-sm @(product.IsActive ? "btn-danger" : "btn-success")">@(product.IsActive ? "Deactivate" : "Activate")</button></form>
+            </td></tr>
+        }
+        </tbody></table></div>
     }
-
-    <div class="table-responsive">
-
-        <table class="table table-bordered table-hover">
-
-            <thead>
-
-                <tr>
-                    <th>ID</th>
-                    <th>Image</th>
-                    <th>Name</th>
-                    <th>Farmer</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                @foreach (var product in Model)
-                {
-                    <tr>
-
-                        <td>
-                            @product.Id
-                        </td>
-
-                        <td>
-
-                            @if (!string.IsNullOrEmpty(
-                                                    product.ImageUrl))
-                            {
-                                <img src="@product.ImageUrl"
-                                     width="60"
-                                     height="60"
-                                     style="object-fit:cover;" />
-                            }
-
-                        </td>
-
-                        <td>
-                            @product.Name
-                        </td>
-
-                        <td>
-                            @product.Farmer?.Name
-                        </td>
-
-                        <td>
-                            @product.Category
-                        </td>
-
-                        <td>
-                            Rs.
-                            @product.PricePerUnit.ToString("N2")
-                        </td>
-
-                        <td>
-                            @product.Quantity
-                        </td>
-
-                        <td>
-
-                            @if (product.IsActive)
-                            {
-                                <span class="badge bg-success">
-                                    Active
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-danger">
-                                    Inactive
-                                </span>
-                            }
-
-                    </td>
-
-                    <td>
-
-                        <form asp-controller="Admin"
-                              asp-action="ToggleProductStatus"
-                              method="post">
-
-                            @Html.AntiForgeryToken()
-
-                            <input type="hidden"
-                                   name="id"
-                                   value="@product.Id" />
-
-                            <button type="submit"
-                                    class="btn btn-sm
-                                        @(product.IsActive
-                                                                                ? "btn-danger"
-                                                                                : "btn-success")">
-
-                                @(product.IsActive
-                                                                ? "Deactivate"
-                                                                : "Activate")
-
-                            </button>
-
-                            </form>
-
-                        </td>
-
-                    </tr>
-                                }
-
-            </tbody>
-
-        </table>
-
-    </div>
-
 </div>

@@ -1,90 +1,37 @@
-﻿@model DigitalAgriculturalMarketplace.ViewModels.PlaceOrderViewModel
+@model DigitalAgriculturalMarketplace.ViewModels.PlaceOrderViewModel
+@{ ViewData["Title"] = "Confirm order"; }
 
-@{
-    ViewData["Title"] = "Place Order";
-}
+<div class="container checkout-container">
+    <nav class="mb-3" aria-label="Breadcrumb"><a asp-controller="Marketplace" asp-action="Details" asp-route-id="@Model.ProductId">@Model.ProductName</a><span class="text-muted"> / Confirm order</span></nav>
+    <div class="page-header"><div><p class="eyebrow">Purchase</p><h1 class="h2">Confirm your order</h1><p>Review the quantity and total before placing the order.</p></div></div>
 
-<div class="container mt-4">
-
-    <h2>Place Order</h2>
-
-    <hr />
-
-
-    <div class="row">
-        <div class="col-12 col-md-8 col-lg-7">
-
-            <h4>
-                @Model.ProductName
-            </h4>
-
-            <p>
-                <strong>Price Per Unit:</strong>
-                Rs. @Model.PricePerUnit.ToString("N2")
-            </p>
-
-            <p>
-                <strong>Available Quantity:</strong>
-                @Model.AvailableQuantity
-            </p>
-
-            <form asp-controller="Orders"
-                  asp-action="PlaceOrder"
-                  method="post">
-
-                @Html.AntiForgeryToken()
-
-                <input type="hidden"
-                       asp-for="ProductId" />
-
-                <div asp-validation-summary="ModelOnly"
-                     class="text-danger mb-3">
-                </div>
-
-                <div class="mb-3">
-
-                    <label asp-for="Quantity"
-                           class="form-label">
-                        Quantity
-                    </label>
-
-                    <input asp-for="Quantity"
-                           class="form-control"
-                           min="1"
-                           max="@Model.AvailableQuantity" />
-
-                    <span asp-validation-for="Quantity"
-                          class="text-danger">
-                    </span>
-
-                </div>
-
-                <button type="submit"
-                        class="btn btn-success">
-
-                    Confirm Order
-
-                </button>
-
-                <a asp-controller="Marketplace"
-                   asp-action="Details"
-                   asp-route-id="@Model.ProductId"
-                   class="btn btn-secondary">
-
-                    Cancel
-
-                </a>
-
-            </form>
-
+    <div class="card"><div class="card-body p-4">
+        <div class="d-flex justify-content-between gap-3 pb-3 mb-3 border-bottom">
+            <div><h2 class="h5 mb-1">@Model.ProductName</h2><span class="product-meta">@Model.AvailableQuantity.ToString("0.###") @(Model.UnitCode ?? Model.UnitName ?? "unit") currently available</span></div>
+            <span class="price-line text-nowrap"><strong class="product-price">Rs. @Model.PricePerUnit.ToString("N2")</strong><span class="price-unit">/ unit</span></span>
         </div>
 
-    </div>
+        <form asp-controller="Orders" asp-action="PlaceOrder" method="post" data-order-form data-unit-price="@Model.PricePerUnit.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+            <input type="hidden" asp-for="ProductId" />
+            <input type="hidden" asp-for="OperationKey" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
+            <div class="mb-4">
+                <label asp-for="Quantity" class="form-label d-block">Quantity</label>
+                <div class="quantity-stepper">
+                    <button type="button" data-quantity-decrease aria-label="Decrease quantity">&minus;</button>
+                    <input asp-for="Quantity" min="@Model.MinimumOrderQuantity" step="@(Model.DecimalPlaces == 0 ? "1" : $"0.{new string('0', Model.DecimalPlaces - 1)}1")" max="@Model.AvailableQuantity" inputmode="decimal" data-quantity-input />
+                    <button type="button" data-quantity-increase aria-label="Increase quantity">+</button>
+                </div>
+                <span asp-validation-for="Quantity" class="text-danger small d-block mt-1"></span>
+            </div>
+
+            <div class="order-total-box mb-4"><span>Order total</span><strong data-order-total>Rs. @Model.PricePerUnit.ToString("N2")</strong></div>
+
+            <div class="alert alert-info small">The order will be sent to the farmer as pending. You can cancel it before the farmer confirms it.</div>
+            <div class="d-flex flex-wrap gap-2"><button type="submit" class="btn btn-primary">Place order</button><a asp-controller="Marketplace" asp-action="Details" asp-route-id="@Model.ProductId" class="btn btn-secondary">Back to product</a></div>
+        </form>
+    </div></div>
 </div>
 
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-}
+@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }

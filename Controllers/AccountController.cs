@@ -3,7 +3,6 @@ using DigitalAgriculturalMarketplace.ViewModels;
 using DigitalAgriculturalMarketPlace.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Metadata.Ecma335;
 using DigitalAgriculturalMarketplace.Constants;
 
 namespace DigitalAgriculturalMarketplace.Controllers
@@ -116,22 +115,10 @@ namespace DigitalAgriculturalMarketplace.Controllers
                 string? userType =
                     HttpContext.Session.GetString("UserType");
 
-                if (userType == "Farmer")
-                {
-                    return RedirectToAction(
-                        "FarmerDashboard",
-                        "Home"
-                    );
-                }
-
-                if (userType == "Consumer")
-                {
-                    return RedirectToAction(
-                        "ConsumerDashboard",
-                        "Home"
-                    );
-                }
-                if (userType == "Admin")
+                if (string.Equals(
+    userType,
+    UserRoles.Admin,
+    StringComparison.OrdinalIgnoreCase))
                 {
                     return RedirectToAction(
                         "Dashboard",
@@ -139,10 +126,7 @@ namespace DigitalAgriculturalMarketplace.Controllers
                     );
                 }
 
-                return RedirectToAction(
-                    "Index",
-                    "Home"
-                );
+                return RedirectToAction("Dashboard", "Home");
             }
 
             return View();
@@ -192,7 +176,7 @@ namespace DigitalAgriculturalMarketplace.Controllers
 
                 return View(model);
             }
-
+            HttpContext.Session.Clear();
             HttpContext.Session.SetInt32("UserId", user.Id);
             HttpContext.Session.SetString("UserName", user.Name);
             HttpContext.Session.SetString("UserType", user.UserType);
@@ -205,19 +189,15 @@ namespace DigitalAgriculturalMarketplace.Controllers
                 );
             }
 
-            if (user.UserType == UserRoles.Farmer)
+            if (user.UserType != UserRoles.Admin)
             {
-                return RedirectToAction("FarmerDashboard", "Home");
-            }
-
-            if (user.UserType == UserRoles.Consumer)
-            {
-                return RedirectToAction("ConsumerDashboard", "Home");
+                return RedirectToAction("Dashboard", "Home");
             }
 
             return RedirectToAction("Index", "Home");
         }
-        [HttpGet]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();

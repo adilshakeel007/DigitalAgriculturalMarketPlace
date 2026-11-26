@@ -1,114 +1,37 @@
-﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Message>
+@model IEnumerable<DigitalAgriculturalMarketplace.ViewModels.InboxConversationViewModel>
+@{ ViewData["Title"] = "Messages"; bool showFarmerSidebar = Context.Session.GetString("UserType") == "Farmer"; }
 
-@{
-    ViewData["Title"] = "Inbox";
-}
+<div class="@(showFarmerSidebar ? "management-shell" : "container")">
+    @if (showFarmerSidebar) { <partial name="_FarmerSidebar" /> }
+    <div class="@(showFarmerSidebar ? "management-content" : string.Empty)">
+    <div class="page-header"><div><p class="eyebrow">Conversations</p><h1 class="h2">Messages</h1><p>Questions and updates shared with marketplace members.</p></div></div>
 
-<div class="container mt-4">
-
-    <h2>Inbox</h2>
-
-    <p class="text-muted">
-        Messages received from other users.
-    </p>
-
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">
-            @TempData["SuccessMessage"]
-        </div>
-    }
+    @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
 
     @if (!Model.Any())
     {
-        <div class="alert alert-info">
-            Your inbox is empty.
-        </div>
+        <div class="empty-state"><h2 class="h4">No conversations yet</h2><p class="mb-0">Messages connected to products and orders will appear here.</p></div>
     }
     else
     {
-        <div class="table-responsive">
-
-            <table class="table table-bordered table-hover">
-
-                <thead>
-                    <tr>
-                        <th>From</th>
-                        <th>Product</th>
-                        <th>Message</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    @foreach (var message in Model)
-                    {
-                        <tr>
-
-                            <td>
-                                @message.Sender?.Name
-                            </td>
-
-                            <td>
-                                @(message.Product?.Name ?? "-")
-                            </td>
-
-                            <td>
-                                @if (message.Content.Length > 50)
-                                {
-                                    @(message.Content.Substring(0, 50) + "...")
-                                }
-                                else
-                                {
-                                    @message.Content
-                                }
-                        </td>
-
-                        <td>
-                            @(message.SentAt
-                                                    .ToString("dd MMM yyyy"))
-                    </td>
-
-                            <td>
-                        @if (message.IsRead)
-                                {
-                                    <span class="badge bg-secondary">
-                                        Read
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-success">
-                                        New
-                                    </span>
-                                }
-                            </td>
-
-                            <td>
-
-                                <a asp-controller="Messages"
-                                   asp-action="Conversation"
-                                   asp-route-userId="@message.SenderId"
-                                   asp-route-productId="@message.ProductId"
-                                   class="btn btn-sm btn-primary">
-
-                                    Open
-
-                                </a>
-
-                            </td>
-
-                        </tr>
-                    }
-
-                </tbody>
-
-            </table>
-
+        <div class="card overflow-hidden">
+            <div class="list-group list-group-flush">
+                @foreach (var conversation in Model)
+                {
+                    <a class="list-group-item list-group-item-action p-3" asp-action="Conversation" asp-route-userId="@conversation.OtherUserId" asp-route-productId="@conversation.ProductId">
+                        <div class="d-flex align-items-start gap-3">
+                            <span class="user-avatar flex-shrink-0" aria-hidden="true">@(conversation.OtherUserName.Substring(0, 1).ToUpperInvariant())</span>
+                            <div class="flex-grow-1 min-width-0">
+                                <div class="d-flex justify-content-between gap-3"><strong>@conversation.OtherUserName</strong><small class="text-muted text-nowrap">@conversation.LastMessageAt.ToString("dd MMM, h:mm tt")</small></div>
+                                @if (!string.IsNullOrWhiteSpace(conversation.ProductName)) { <span class="product-meta">About @conversation.ProductName</span> }
+                                <p class="text-truncate mb-0 mt-1">@conversation.LastMessage</p>
+                            </div>
+                            @if (conversation.UnreadCount > 0) { <span class="badge bg-success">@conversation.UnreadCount new</span> }
+                        </div>
+                    </a>
+                }
+            </div>
         </div>
     }
-
+    </div>
 </div>

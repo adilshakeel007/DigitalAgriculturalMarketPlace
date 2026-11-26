@@ -1,12 +1,13 @@
 ﻿using DigitalAgriculturalMarketPlace.Data;
 using DigitalAgriculturalMarketplace.Filters;
 using DigitalAgriculturalMarketplace.Models;
+using DigitalAgriculturalMarketplace.Constants;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigitalAgriculturalMarketplace.Controllers
 {
-    [SessionAuthorize]
+    [SessionAuthorize(UserRoles.MarketplaceMember)]
     public class NotificationsController : Controller
     {
         private readonly ApplicationDbContext _context;

@@ -37,12 +37,35 @@ namespace DigitalAgriculturalMarketplace.Models
 
         public int FarmerId { get; set; }
 
+        public int? CatalogProductId { get; set; }
+
+        public int? UnitOfMeasureId { get; set; }
+
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal? AvailableQuantity { get; set; }
+
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal ReservedQuantity { get; set; }
+
+        [Column(TypeName = "decimal(18,3)")]
+        public decimal? MinimumOrderQuantity { get; set; }
+
+        public DateTime? UpdatedAt { get; set; }
+
+        [Timestamp]
+        public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
         public User? Farmer { get; set; }
+        public CatalogProduct? CatalogProduct { get; set; }
+        public UnitOfMeasure? UnitOfMeasure { get; set; }
         public ICollection<Order> Orders { get; set; }
     = new List<Order>();
         public ICollection<Review> Reviews { get; set; }
     = new List<Review>();
         public ICollection<Message> Messages { get; set; }
     = new List<Message>();
+        public ICollection<InventoryMovement> InventoryMovements { get; set; } = new List<InventoryMovement>();
+        public ICollection<InventoryReservation> InventoryReservations { get; set; } = new List<InventoryReservation>();
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }

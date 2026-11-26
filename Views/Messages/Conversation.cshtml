@@ -1,121 +1,48 @@
-﻿@model IEnumerable<DigitalAgriculturalMarketplace.Models.Message>
-
+@model IEnumerable<DigitalAgriculturalMarketplace.Models.Message>
 @{
-    ViewData["Title"] = "Conversation";
-
-    int currentUserId =
-        Context.Session.GetInt32("UserId") ?? 0;
+    ViewData["Title"] = $"Conversation with {ViewBag.OtherUserName}";
+    int currentUserId = Context.Session.GetInt32("UserId") ?? 0;
+    bool showFarmerSidebar = Context.Session.GetString("UserType") == "Farmer";
 }
 
-<div class="container mt-4">
+<div class="@(showFarmerSidebar ? "management-shell" : "container")">
+    @if (showFarmerSidebar) { <partial name="_FarmerSidebar" /> }
+    <div class="@(showFarmerSidebar ? "management-content" : string.Empty)">
+    <div class="page-header">
+        <div><p class="eyebrow">Conversation</p><h1 class="h2">@ViewBag.OtherUserName</h1>@if (ViewBag.ProductName != null) { <p>Discussing @ViewBag.ProductName</p> }</div>
+        <a asp-action="Inbox" class="btn btn-secondary">Back to messages</a>
+    </div>
 
-    <h2>
-        Conversation with @ViewBag.OtherUserName
-    </h2>
+    @if (TempData["SuccessMessage"] != null) { <div class="alert alert-success" role="status">@TempData["SuccessMessage"]</div> }
 
-    @if (ViewBag.ProductName != null)
-    {
-        <p class="text-muted">
-            Product: @ViewBag.ProductName
-        </p>
-    }
-
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">
-            @TempData["SuccessMessage"]
-        </div>
-    }
-
-    <hr />
-
-    <div class="mb-4">
-
+    <div class="card mb-3"><div class="card-body message-list">
         @if (!Model.Any())
         {
-            <div class="alert alert-info">
-                No messages yet.
-            </div>
+            <div class="empty-state"><h2 class="h5">Start the conversation</h2><p class="mb-0">Send a clear question or update below.</p></div>
         }
         else
         {
             @foreach (var message in Model)
             {
-                bool sentByMe =
-                message.SenderId == currentUserId;
-
-                <div class="card mb-2">
-
-                    <div class="card-body">
-
-                        <strong>
-                            @(sentByMe
-                                                ? "You"
-                                                : message.Sender?.Name)
-                                                                   </strong>
-
-                        <p class="mb-1 mt-2">
-                            @message.Content
-                        </p>
-
-                        <small class="text-muted">
-                            @(message.SentAt
-                                                .ToString("dd MMM yyyy hh:mm tt"))
-                </small>
-
-                    </div>
-
-                </div>
-                }
+                bool sentByMe = message.SenderId == currentUserId;
+                <article class="message-bubble @(sentByMe ? "sent" : string.Empty)">
+                    <strong class="small">@(sentByMe ? "You" : message.Sender?.Name)</strong>
+                    <p class="my-1">@message.Content</p>
+                    <small class="text-muted">@message.SentAt.ToString("dd MMM yyyy, h:mm tt")</small>
+                </article>
+            }
         }
+    </div></div>
 
+    <div class="card"><div class="card-body">
+        <form asp-action="Send" method="post">
+            <input type="hidden" name="ReceiverId" value="@ViewBag.OtherUserId" />
+            <input type="hidden" name="ProductId" value="@ViewBag.ProductId" />
+            <label class="form-label" for="replyContent">Reply</label>
+            <textarea id="replyContent" name="Content" class="form-control" rows="3" required maxlength="2000" placeholder="Write a helpful reply..." data-character-count></textarea>
+            <div class="field-meta"><span>Keep messages clear and relevant to the order or product.</span><span data-character-output>0 / 2000</span></div>
+            <div class="d-flex justify-content-end mt-3"><button type="submit" class="btn btn-primary">Send reply</button></div>
+        </form>
+    </div></div>
     </div>
-
-    <hr />
-
-    <h5>Reply</h5>
-
-    <form asp-controller="Messages"
-          asp-action="Send"
-          method="post">
-
-        @Html.AntiForgeryToken()
-
-        <input type="hidden"
-               name="ReceiverId"
-               value="@ViewBag.OtherUserId" />
-
-        <input type="hidden"
-               name="ProductId"
-               value="@ViewBag.ProductId" />
-
-        <div class="mb-3">
-
-            <textarea name="Content"
-                      class="form-control"
-                      rows="3"
-                      required
-                      maxlength="2000"
-                      placeholder="Write a reply...">
-            </textarea>
-
-        </div>
-
-        <button type="submit"
-                class="btn btn-primary">
-
-            Send Reply
-
-        </button>
-
-        <a asp-controller="Messages"
-           asp-action="Inbox"
-           class="btn btn-secondary">
-
-            Back to Inbox
-
-        </a>
-
-    </form>
-
 </div>

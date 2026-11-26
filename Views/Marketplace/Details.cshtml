@@ -1,285 +1,65 @@
-﻿@model DigitalAgriculturalMarketplace.Models.Product
+@model DigitalAgriculturalMarketplace.Models.Product
 @{
-    double averageRating = 0;
-
-    if (Model.Reviews.Any())
-    {
-        averageRating =
-            Model.Reviews.Average(r => r.Rating);
-    }
-}
-@{
-    ViewData["Title"] = "Product Details";
+    ViewData["Title"] = Model.Name;
+    double averageRating = Model.Reviews.Any() ? Model.Reviews.Average(r => r.Rating) : 0;
 }
 
-<div class="container mt-4">
+<div class="container">
+    <nav class="mb-3" aria-label="Breadcrumb"><a asp-action="Index">Marketplace</a> <span class="text-muted">/ @Model.Name</span></nav>
 
-    <div class="row g-4">
-
-        <!-- IMAGE -->
-        <div class="col-12 col-lg-5">
-
-            @if (!string.IsNullOrEmpty(Model.ImageUrl))
-            {
-                <img src="@Model.ImageUrl"
-                     alt="@Model.Name"
-                     class="img-fluid rounded border"
-                     style="width: 100%; max-height: 450px; object-fit: cover;" />
-            }
-            else
-            {
-                <div class="border rounded d-flex align-items-center justify-content-center"
-                     style="height: 350px;">
-
-                    <span class="text-muted">
-                        No Image Available
-                    </span>
-
-                </div>
-            }
-
+    <div class="row g-4 g-lg-5">
+        <div class="col-lg-6 product-gallery">
+            <partial name="_ProductImage" model="Model" />
         </div>
 
-
-        <!-- DETAILS -->
-        <div class="col-12 col-lg-7">
-
-            <h2>
-                @Model.Name
-            </h2>
-
-            <hr />
-
-
-            <p>
-                <strong>Category:</strong>
-                @Model.Category
-            </p>
-            <p>
-                <strong>Rating:</strong>
-
-                @if (Model.Reviews.Any())
-                {
-                    <span>
-                        @averageRating.ToString("0.0") / 5
-                        (@Model.Reviews.Count review(s))
-                    </span>
-                }
-                else
-                {
-                    <span class="text-muted">
-                        No reviews yet
-                    </span>
-                }
-            </p>
-
-
-            <p>
-                <strong>Price:</strong>
-                Rs. @Model.PricePerUnit.ToString("N2")
-            </p>
-
-
-            <p>
-                <strong>Available Quantity:</strong>
-                @Model.Quantity
-
-                @if (Model.Quantity <= 5)
-                {
-                    <span class="text-danger ms-2">
-                        Low Stock
-                    </span>
-                }
-
-            </p>
-
-
-            <p>
-                <strong>Listed:</strong>
-                @(Model.ListedAt.ToString("dd MMM yyyy"))
-            </p>
-
-
-            <p>
-                <strong>Status:</strong>
-
-                @if (Model.IsActive && Model.Quantity > 0)
-                {
-                    <span class="badge bg-success">
-                        Available
-                    </span>
-                }
-                else
-                {
-                    <span class="badge bg-danger">
-                        Not Available
-                    </span>
-                }
-
-            </p>
-
-
-            <hr />
-
-
-            <h5>
-                Description
-            </h5>
-
-            @if (!string.IsNullOrWhiteSpace(Model.Description))
-            {
-                <p>
-                    @Model.Description
-                </p>
-            }
-            else
-            {
-                <p class="text-muted">
-                    No description provided.
-                </p>
-            }
-
-
-            <!-- SELLER -->
-            <div class="card mt-4">
-
-                <div class="card-body">
-
-                    <h5 class="card-title">
-                        Seller Information
-                    </h5>
-
-                    <p class="mb-0">
-                        <strong>Farmer:</strong>
-                        @Model.Farmer?.Name
-                    </p>
-                    @if (Model.Farmer != null)
-                    {
-                        <a asp-controller="Messages"
-                           asp-action="Send"
-                           asp-route-receiverId="@Model.Farmer.Id"
-                           asp-route-productId="@Model.Id"
-                           class="btn btn-outline-primary mt-3">
-
-                            Message Farmer
-
-                        </a>
-                    }
-
-                </div>
-
+        <div class="col-lg-6">
+            <p class="eyebrow">@Model.Category</p>
+            <h1 class="h2">@Model.Name</h1>
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                <span class="price-line"><span class="product-price">Rs. @Model.PricePerUnit.ToString("N2")</span><span class="price-unit">per unit</span></span>
+                @{ var available = Model.AvailableQuantity ?? Model.Quantity; var unit = Model.UnitOfMeasure?.Code ?? "unit"; }
+                <span class="stock-label @(available <= 5 ? "low" : string.Empty)">@available.ToString("0.###") @unit available</span>
             </div>
 
+            <p>@(string.IsNullOrWhiteSpace(Model.Description) ? "The farmer has not added a description for this product yet." : Model.Description)</p>
 
-            <!-- ORDER PLACEHOLDER -->
-            <div class="card mt-4">
+            <dl class="detail-list my-4">
+                <dt>Farmer</dt><dd>@Model.Farmer?.Name</dd>
+                <dt>Listed</dt><dd>@Model.ListedAt.ToString("dd MMM yyyy")</dd>
+                <dt>Customer rating</dt>
+                <dd>@(Model.Reviews.Any() ? $"{averageRating:0.0} / 5 from {Model.Reviews.Count} review(s)" : "No reviews yet")</dd>
+            </dl>
 
-                <div class="card-body">
-
-                    <h5>
-                        Interested in this product?
-                    </h5>
-
-                    <p class="text-muted">
-                        Order placement will be available from this page.
-                    </p>
-
-                    @if (Model.Quantity > 0)
-                    {
-                        <a asp-controller="Orders"
-                           asp-action="PlaceOrder"
-                           asp-route-productId="@Model.Id"
-                           class="btn btn-success">
-
-                            Place Order
-
-                        </a>
-                    }
-                    else
-                    {
-                        <button class="btn btn-secondary"
-                                disabled>
-
-                            Out of Stock
-
-                        </button>
-                    }
-
-                </div>
-
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <a asp-controller="Orders" asp-action="PlaceOrder" asp-route-productId="@Model.Id" class="btn btn-primary">Place order</a>
+                @if (Model.Farmer != null)
+                {
+                    <a asp-controller="Messages" asp-action="Send" asp-route-receiverId="@Model.Farmer.Id" asp-route-productId="@Model.Id" class="btn btn-outline-primary">Message farmer</a>
+                }
             </div>
 
-
-            <!-- BACK BUTTON -->
-            <div class="mt-4">
-
-                <a asp-controller="Marketplace"
-                   asp-action="Index"
-                   class="btn btn-secondary">
-
-                    Back to Marketplace
-
-                </a>
-
-            </div>
-            <div class="card mt-4">
-
-                <div class="card-body">
-
-                    <h4>
-                        Customer Reviews
-                    </h4>
-
-                    <hr />
-
-                    @if (!Model.Reviews.Any())
-                    {
-                        <p class="text-muted">
-                            No reviews have been submitted yet.
-                        </p>
-                    }
-                    else
-                    {
-                        @foreach (var review in
-                                            Model.Reviews
-                                            .OrderByDescending(r => r.ReviewDate))
-                        {
-                            <div class="border-bottom pb-3 mb-3">
-
-                                <div>
-                                    <strong>
-                                        @review.Consumer?.Name
-                                    </strong>
-                                </div>
-
-                                <div>
-                                    <strong>Rating:</strong>
-                                    @review.Rating / 5
-                                </div>
-
-                                @if (!string.IsNullOrWhiteSpace(
-                                                        review.Comment))
-                                {
-                                    <p class="mb-1">
-                                        @review.Comment
-                                    </p>
-                                }
-
-                            <small class="text-muted">
-                                @(review.ReviewDate
-                                                            .ToString("dd MMM yyyy"))
-                        </small>
-
-                            </div>
-                                        }
-                    }
-
-                </div>
-
-            </div>
-
+            <div class="card"><div class="card-body"><h2 class="h5">Buy with confidence</h2><p class="mb-0">Your order begins as pending. The farmer confirms it, completes fulfilment, and you can review the product after completion.</p></div></div>
         </div>
-
     </div>
 
+    <section class="mt-5" aria-labelledby="reviewsTitle">
+        <div class="page-header mb-3"><div><p class="eyebrow">Verified feedback</p><h2 id="reviewsTitle" class="h4">Customer reviews</h2></div></div>
+        @if (!Model.Reviews.Any())
+        {
+            <div class="empty-state"><h3>No reviews yet</h3><p class="mb-0">Completed-order reviews will appear here.</p></div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var review in Model.Reviews.OrderByDescending(r => r.ReviewDate))
+                {
+                    <div class="col-md-6"><article class="card h-100"><div class="card-body">
+                        <div class="d-flex justify-content-between gap-2"><strong>@review.Consumer?.Name</strong><span class="badge bg-warning">@review.Rating / 5</span></div>
+                        @if (!string.IsNullOrWhiteSpace(review.Comment)) { <p class="my-3">@review.Comment</p> }
+                        <small class="text-muted">@review.ReviewDate.ToString("dd MMM yyyy")</small>
+                    </div></article></div>
+                }
+            </div>
+        }
+    </section>
 </div>

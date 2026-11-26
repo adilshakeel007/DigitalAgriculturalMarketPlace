@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DigitalAgriculturalMarketPlace.Controllers
 {
-    [SessionAuthorize]
+    [SessionAuthorize(UserRoles.MarketplaceMember)]
     public class MessagesController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -20,7 +20,7 @@ namespace DigitalAgriculturalMarketPlace.Controllers
         }
         public IActionResult Index()
         {
-            return View();
+            return RedirectToAction(nameof(Inbox));
         }
         [HttpGet]
         public async Task<IActionResult> Send(
@@ -302,14 +302,47 @@ namespace DigitalAgriculturalMarketPlace.Controllers
 
             var messages = await _context.Messages
                 .Include(m => m.Sender)
+                .Include(m => m.Receiver)
                 .Include(m => m.Product)
                 .Where(m =>
-                    m.ReceiverId == currentUserId.Value
+                    m.ReceiverId == currentUserId.Value ||
+                    m.SenderId == currentUserId.Value
                 )
                 .OrderByDescending(m => m.SentAt)
                 .ToListAsync();
 
-            return View(messages);
+            var conversations = messages
+                .GroupBy(m => new
+                {
+                    OtherUserId = m.SenderId == currentUserId.Value
+                        ? m.ReceiverId
+                        : m.SenderId,
+                    m.ProductId
+                })
+                .Select(group =>
+                {
+                    Message latest = group.First();
+                    User? otherUser = latest.SenderId == currentUserId.Value
+                        ? latest.Receiver
+                        : latest.Sender;
+
+                    return new InboxConversationViewModel
+                    {
+                        OtherUserId = group.Key.OtherUserId,
+                        OtherUserName = otherUser?.Name ?? "User",
+                        ProductId = group.Key.ProductId,
+                        ProductName = latest.Product?.Name,
+                        LastMessage = latest.Content,
+                        LastMessageAt = latest.SentAt,
+                        UnreadCount = group.Count(m =>
+                            m.ReceiverId == currentUserId.Value &&
+                            !m.IsRead)
+                    };
+                })
+                .OrderByDescending(c => c.LastMessageAt)
+                .ToList();
+
+            return View(conversations);
         }
         private async Task CreateNotification(
     int userId,

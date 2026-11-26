@@ -1,91 +1,23 @@
-﻿@model DigitalAgriculturalMarketplace.ViewModels.SendMessageViewModel
+@model DigitalAgriculturalMarketplace.ViewModels.SendMessageViewModel
+@{ ViewData["Title"] = "New message"; bool showFarmerSidebar = Context.Session.GetString("UserType") == "Farmer"; }
 
-@{
-    ViewData["Title"] = "Send Message";
-}
-
-<div class="container mt-4">
-
-    <h2>Send Message</h2>
-
-    <div class="row">
-        <div class="col-12 col-md-8 col-lg-7">
-
-        <div class="card-body">
-
-            <p>
-                <strong>To:</strong>
-                @Model.ReceiverName
-            </p>
-
-            @if (!string.IsNullOrWhiteSpace(Model.ProductName))
-            {
-                <p>
-                    <strong>Product:</strong>
-                    @Model.ProductName
-                </p>
-            }
-
-            <form asp-controller="Messages"
-                  asp-action="Send"
-                  method="post">
-
-                @Html.AntiForgeryToken()
-
-                <input type="hidden"
-                       asp-for="ReceiverId" />
-
-                <input type="hidden"
-                       asp-for="ProductId" />
-
-                <div asp-validation-summary="ModelOnly"
-                     class="text-danger mb-3">
-                </div>
-
-                <div class="mb-3">
-
-                    <label asp-for="Content"
-                           class="form-label">
-                        Message
-                    </label>
-
-                    <textarea asp-for="Content"
-                              class="form-control"
-                              rows="5"
-                              placeholder="Write your message...">
-                    </textarea>
-
-                    <span asp-validation-for="Content"
-                          class="text-danger">
-                    </span>
-
-                </div>
-
-                <button type="submit"
-                        class="btn btn-primary">
-
-                    Send Message
-
-                </button>
-
-                <a asp-controller="Messages"
-                   asp-action="Inbox"
-                   class="btn btn-secondary">
-
-                    Cancel
-
-                </a>
-
+<div class="@(showFarmerSidebar ? "management-shell" : "container")">
+    @if (showFarmerSidebar) { <partial name="_FarmerSidebar" /> }
+    <div class="@(showFarmerSidebar ? "management-content" : "checkout-container")">
+        <div class="page-header"><div><p class="eyebrow">Messages</p><h1 class="h2">New message</h1><p>Send a direct marketplace message to @Model.ReceiverName.</p></div><a class="btn btn-secondary" asp-action="Inbox">Back to messages</a></div>
+        <div class="card"><div class="card-body p-4">
+            <div class="d-flex flex-wrap gap-2 mb-3"><span class="product-meta">To: <strong>@Model.ReceiverName</strong></span>@if (!string.IsNullOrWhiteSpace(Model.ProductName)) { <span class="product-meta">· About: <strong>@Model.ProductName</strong></span> }</div>
+            <form asp-action="Send" method="post">
+                <input type="hidden" asp-for="ReceiverId" /><input type="hidden" asp-for="ProductId" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <label asp-for="Content" class="form-label">Message</label>
+                <textarea asp-for="Content" class="form-control" rows="6" maxlength="2000" data-character-count placeholder="Write a clear, relevant message..."></textarea>
+                <div class="field-meta"><span>Keep messages relevant to the product or order.</span><span data-character-output>0 / 2000</span></div>
+                <span asp-validation-for="Content" class="text-danger small"></span>
+                <div class="d-flex flex-wrap gap-2 mt-4"><button type="submit" class="btn btn-primary">Send message</button><a asp-action="Inbox" class="btn btn-secondary">Cancel</a></div>
             </form>
-
-          </div>
-        </div>
+        </div></div>
     </div>
-
 </div>
 
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-}
+@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }

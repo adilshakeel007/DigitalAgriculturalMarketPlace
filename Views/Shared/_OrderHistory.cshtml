@@ -1,0 +1,16 @@
+@model DigitalAgriculturalMarketplace.Models.Order
+<section class="panel mt-3">
+    <div class="panel-header"><h2>Status history</h2></div>
+    <div class="panel-body">
+        @if (!Model.StatusHistory.Any()) { <p class="text-muted mb-0">No status history is available.</p> }
+        else
+        {
+            <div class="d-grid gap-3">
+            @foreach (var entry in Model.StatusHistory.OrderByDescending(h => h.ChangedAt))
+            {
+                <div><partial name="_OrderStatus" model="entry.ToStatus" /><div class="product-meta mt-1">@entry.ChangedAt.ToLocalTime().ToString("dd MMM yyyy, h:mm tt")</div>@if (!string.IsNullOrWhiteSpace(entry.Reason)) { <div class="small mt-1">@entry.Reason</div> }</div>
+            }
+            </div>
+        }
+    </div>
+</section>
